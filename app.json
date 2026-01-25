@@ -1,25 +1,36 @@
 {
   "expo": {
-    "name": "my-app",
-    "slug": "my-app",
+    "name": "SA Connect NZ",
+    "slug": "sa-connect-nz",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "saconnectnz",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.saconnect.nz",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "SA Connect NZ uses your location to find South African families near you.",
+        "NSPhotoLibraryUsageDescription": "SA Connect NZ uses your photo library to share photos with your SA community.",
+        "NSCameraUsageDescription": "SA Connect NZ uses your camera to take profile photos and share with your community."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#D84315",
+        "foregroundImage": "./assets/images/icon.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.saconnect.nz",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "READ_EXTERNAL_STORAGE",
+        "CAMERA"
+      ]
     },
     "web": {
       "output": "single",
@@ -32,13 +43,25 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#F5F3F0",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#2A2420"
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "SA Connect NZ uses your location to find South African families near you."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "SA Connect NZ uses your photos to share with your SA community."
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true

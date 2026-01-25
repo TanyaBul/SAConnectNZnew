@@ -3,12 +3,17 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { Platform, StyleSheet } from "react-native";
-import HomeStackNavigator from "@/navigation/HomeStackNavigator";
+
+import DiscoverStackNavigator from "@/navigation/DiscoverStackNavigator";
+import MessagesStackNavigator from "@/navigation/MessagesStackNavigator";
+import CommunityStackNavigator from "@/navigation/CommunityStackNavigator";
 import ProfileStackNavigator from "@/navigation/ProfileStackNavigator";
 import { useTheme } from "@/hooks/useTheme";
 
 export type MainTabParamList = {
-  HomeTab: undefined;
+  DiscoverTab: undefined;
+  MessagesTab: undefined;
+  CommunityTab: undefined;
   ProfileTab: undefined;
 };
 
@@ -19,9 +24,9 @@ export default function MainTabNavigator() {
 
   return (
     <Tab.Navigator
-      initialRouteName="HomeTab"
+      initialRouteName="DiscoverTab"
       screenOptions={{
-        tabBarActiveTintColor: theme.tabIconSelected,
+        tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.tabIconDefault,
         tabBarStyle: {
           position: "absolute",
@@ -44,12 +49,32 @@ export default function MainTabNavigator() {
       }}
     >
       <Tab.Screen
-        name="HomeTab"
-        component={HomeStackNavigator}
+        name="DiscoverTab"
+        component={DiscoverStackNavigator}
         options={{
-          title: "Home",
+          title: "Discover",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="home" size={size} color={color} />
+            <Feather name="compass" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="MessagesTab"
+        component={MessagesStackNavigator}
+        options={{
+          title: "Messages",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="message-circle" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="CommunityTab"
+        component={CommunityStackNavigator}
+        options={{
+          title: "Community",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="image" size={size} color={color} />
           ),
         }}
       />

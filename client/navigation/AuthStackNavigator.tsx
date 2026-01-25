@@ -1,0 +1,53 @@
+import React from "react";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
+import WelcomeScreen from "@/screens/WelcomeScreen";
+import SignUpScreen from "@/screens/SignUpScreen";
+import SignInScreen from "@/screens/SignInScreen";
+import CreateProfileScreen from "@/screens/CreateProfileScreen";
+import LocationPermissionScreen from "@/screens/LocationPermissionScreen";
+import { useScreenOptions } from "@/hooks/useScreenOptions";
+
+export type AuthStackParamList = {
+  Welcome: undefined;
+  SignUp: undefined;
+  SignIn: undefined;
+  CreateProfile: undefined;
+  LocationPermission: undefined;
+};
+
+const Stack = createNativeStackNavigator<AuthStackParamList>();
+
+export default function AuthStackNavigator() {
+  const screenOptions = useScreenOptions();
+
+  return (
+    <Stack.Navigator screenOptions={screenOptions}>
+      <Stack.Screen
+        name="Welcome"
+        component={WelcomeScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="SignUp"
+        component={SignUpScreen}
+        options={{ headerTitle: "Sign Up" }}
+      />
+      <Stack.Screen
+        name="SignIn"
+        component={SignInScreen}
+        options={{ headerTitle: "Sign In" }}
+      />
+      <Stack.Screen
+        name="CreateProfile"
+        component={CreateProfileScreen}
+        options={{ headerTitle: "Your Profile" }}
+      />
+      <Stack.Screen
+        name="LocationPermission"
+        component={LocationPermissionScreen}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
+  );
+}

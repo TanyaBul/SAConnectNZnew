@@ -1,8 +1,9 @@
 import React from "react";
-import { View, StyleSheet, Image } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { Image } from "expo-image";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Spacing } from "@/constants/theme";
+import { Spacing, Typography } from "@/constants/theme";
 
 interface HeaderTitleProps {
   title: string;
@@ -14,7 +15,7 @@ export function HeaderTitle({ title }: HeaderTitleProps) {
       <Image
         source={require("../../assets/images/icon.png")}
         style={styles.icon}
-        resizeMode="contain"
+        contentFit="contain"
       />
       <ThemedText style={styles.title}>{title}</ThemedText>
     </View>
@@ -31,9 +32,11 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     marginRight: Spacing.sm,
+    borderRadius: 6,
   },
   title: {
     fontSize: 17,
     fontWeight: "600",
+    fontFamily: Typography.heading.fontFamily,
   },
 });

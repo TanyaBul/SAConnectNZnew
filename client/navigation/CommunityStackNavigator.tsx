@@ -1,25 +1,25 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import ProfileScreen from "@/screens/ProfileScreen";
+import CommunityScreen from "@/screens/CommunityScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
-export type ProfileStackParamList = {
-  Profile: undefined;
+export type CommunityStackParamList = {
+  Community: undefined;
 };
 
-const Stack = createNativeStackNavigator<ProfileStackParamList>();
+const Stack = createNativeStackNavigator<CommunityStackParamList>();
 
-export default function ProfileStackNavigator() {
+export default function CommunityStackNavigator() {
   const screenOptions = useScreenOptions();
 
   return (
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen
-        name="Profile"
-        component={ProfileScreen}
+        name="Community"
+        component={CommunityScreen}
         options={{
-          headerTitle: "Your Family",
+          headerTitle: "Community",
         }}
       />
     </Stack.Navigator>

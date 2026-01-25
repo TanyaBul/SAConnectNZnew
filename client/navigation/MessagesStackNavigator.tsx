@@ -1,25 +1,25 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import ProfileScreen from "@/screens/ProfileScreen";
+import MessagesScreen from "@/screens/MessagesScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
-export type ProfileStackParamList = {
-  Profile: undefined;
+export type MessagesStackParamList = {
+  Messages: undefined;
 };
 
-const Stack = createNativeStackNavigator<ProfileStackParamList>();
+const Stack = createNativeStackNavigator<MessagesStackParamList>();
 
-export default function ProfileStackNavigator() {
+export default function MessagesStackNavigator() {
   const screenOptions = useScreenOptions();
 
   return (
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen
-        name="Profile"
-        component={ProfileScreen}
+        name="Messages"
+        component={MessagesScreen}
         options={{
-          headerTitle: "Your Family",
+          headerTitle: "Messages",
         }}
       />
     </Stack.Navigator>

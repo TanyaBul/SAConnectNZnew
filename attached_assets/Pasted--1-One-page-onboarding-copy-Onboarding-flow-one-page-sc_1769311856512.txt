@@ -1,0 +1,237 @@
+# 1) One-page onboarding copy
+
+### Onboarding flow (one page, scrollable)
+- Headline: “Find Your SA Family in New Zealand”
+- Subheadline: “Connect with South African families nearby, share stories, memories, and meetups.”
+- Key value bullets:
+ - “Search by area or radius to meet nearby families”
+ - “Create a family profile with kids’ names and ages”
+ - “Share photos securely and privately with your network”
+ - “Chat securely after you connect”
+- Input prompts (optional toggles):
+ - Location: [Auto-detect] or manual
+ - Radius preference: [5km, 10km, 25km, 50km, 100km]
+ - Suburbs: multi-select or search
+ - Family information: family name(s), number of kids, ages (optional)
+ - Bio: short bio (140–300 chars)
+ - Interests: checkboxes (e.g., sports, church, schools, markets, braais, SA culture)
+- Security/Account:
+ - Sign up with Email or Phone (OTP) or Social Sign-In (Apple/Google)
+ - Password strength indicator
+ - Privacy notice: “We never share your data without consent”
+- CTA:
+ - “Create Profile” and “Skip for now” (with onboarding progress reminder)
+- Progress indicators (optional): step dots or progress bar
+- Legal:
+ - Link to Terms of Service, Privacy Policy, and Age-appropriate content guidelines
+
+---
+
+## 2) Key features and data model (backend-focused)
+
+### Core features
+- Secure login and user authentication
+- Profile creation (personal + family data)
+- Photo upload and secure access
+- Location-based search by radius or suburbs
+- Bio and interests
+- Family details: family names and ages for kids (optional)
+- Connect and messaging once two users “match” or approve
+- In-app purchases (paid app) with restoration of purchases
+- WhatsApp integration (as needed) for sharing or contact (opt-in method)
+- App Store compliance: permissions, purchases, privacy disclosures
+
+### Data model (simplified)
+- User
+ - userId (string, unique)
+ - email/phone (string, unique)
+ - passwordHash (string) [or OAuth token]
+ - profile: {
+   - displayName (string)
+   - avatarUrl (string)
+   - bio (string)
+   - location: {
+     - country (string) — default: New Zealand
+     - city/suburb (string)
+     - lat, lon (float)
+     - radiusPreference (number, km)
+   }
+   - family: {
+     - familyName (string)
+     - kids: [
+       { name (string), age (int) }
+     ]
+   }
+   - interests: [string]
+   - createdAt, updatedAt
+ }
+ - photos: [ { photoUrl, uploadedAt, privacySetting } ]
+ - connections: [ { connectedUserId, status (pending/connected/blocked), createdAt } ]
+ - messages: [ { threadId, lastMessageAt } ]
+ - appSettings: { pushNotificationsEnabled, theme, language }
+- MessageThread
+ - threadId
+ - participants: [userId]
+ - messages: [ { messageId, senderId, text, photoUrl, timestamp, read } ]
+- Purchase
+ - purchaseId
+ - userId
+ - productId
+ - purchaseDate
+ - restored (bool)
+- Admin/Moderation
+ - reports, flags, content moderation logs
+
+---
+
+## 3) Front-end design prompts (color & feel with African and NZ influences)
+
+### Visual theme guidance
+- Color palette (example):
+ - Deep earth tones for foundation: #2A2A2A (charcoal), #4A2C0A (coffee)
+ - SA-inspired accents: #D62828 (red), #F2C14E (sunny yellow), #1B9C85 (teal-green)
+ - NZ-inspired accents: #0F7A5D (green), #5FB548 (lime), #1E1E1E (dark)
+ - Neutrals: #FFFFFF, #F5F5F5, #EDEDED
+- Typography:
+ - Headlines: bold, friendly sans-serif with subtle character (e.g., Poppins, Inter)
+ - Body: clean sans-serif (Natural, Inter)
+- Imagery:
+ - Photos featuring diverse SA families, kids, community events, urban and rural NZ settings
+ - Use subtle grain texture or warm filters to evoke warmth and community
+- UI touches:
+ - Cards with rounded corners, soft shadows
+ - Subtle SA/NZ flag-inspired accent motifs (e.g., small icons in headers)
+ - Location pin icons and map-inspired visuals for search
+- Avatar/Photo UI:
+ - Avatar circle with optional bordered ring (green/earth-tone)
+ - Photo gallery with privacy indicators (public/private)
+
+### Front-end prompts for a no-code builder
+- Build a responsive home/dashboard with:
+ - Top navigation: logo, search, messages, profile
+ - Left/side or bottom tab bar: Home, Discover (search), Messages, Profile, Settings
+ - Discover screen:
+   - Map view with radius circle toggle
+   - List view with distance info, short bio, and “Connect” button
+ - Profile screen:
+   - Avatar, bio, family details, location, interests
+   - Photo gallery with upload button (drag-and-drop or picker)
+ - Edit profile modal or page:
+   - Fields for displayName, bio, location, family, kids, interests
+   - Photo upload integration
+ - Messaging screen:
+   - Thread list with last message preview
+   - In-thread chat with image attachments
+ - Purchase/Store screen:
+   - List of in-app purchases, restore purchases button
+- Accessibility:
+ - High-contrast mode, alt text for images, semantic HTML, clear focus styles
+
+---
+
+## 4) Backend design prompts (security-first)
+
+### Authentication and security
+- Use OAuth2/OIDC or a secure authentication service (e.g., Firebase Auth, Auth0, or your platform’s provider)
+- Enforce strong password requirements and MFA if available
+- Email/phone verification (OTP) during signup
+- Session management with short-lived access tokens and refresh tokens
+- Encrypt sensitive data at rest (AES-256) and in transit (TLS 1.2+)
+
+### Data access and privacy
+- Implement role-based access control (RBAC) for admins vs users
+- Privacy settings per photo and per connection
+- User consent for data sharing; provide clear opt-in/opt-out for features (photos, location sharing)
+- Store only necessary personal data; minimize sensitive data retention
+- Regular security audits and logging of access events
+
+### Photo handling
+- Validate and sanitize uploaded images
+- Restrict image sizes and dimensions to optimize storage
+- Use a secure object storage (e.g., AWS S3 with signed URLs, or platform-provided storage)
+- Serve images via CDN with proper access controls
+- Implement temporary signed URLs for photo access as needed
+
+### Location and search
+- Store geocoordinates (lat, lon) and perform radius-based queries using geospatial indexing
+- Allow search by:
+ - Radius: distance between user and other profiles
+ - Suburbs: exact suburb matching
+- Rate-limit search requests to prevent abuse
+- Provide a clearly stated privacy approach for location sharing
+
+### Messaging
+- End-to-end encryption is complex in consumer apps; if not feasible, implement server-side encryption for at-rest and in-transit
+- Store messages with timestamps; mark read/unread per user
+- Implement moderation flags for inappropriate content in messages
+- Support media messages with size limits and scanning for safety
+
+### Payments and App Store features
+- Implement in-app purchases for premium features or subscriptions
+- Restore purchases: provide a robust restore flow using platform purchase receipts
+- Handle subscription state changes, proration, and grace periods
+- Compliance: adhere to App Store guidelines (device capabilities, entitlement management, privacy disclosures)
+
+### WhatsApp integration (optional)
+- If enabling contact sharing via WhatsApp:
+ - Provide a Share Intent that opens WhatsApp with a prefilled message (consent-based)
+ - Do not automatically message users without explicit user action
+ - Respect user privacy—show clear opt-in for external chat apps
+
+---
+
+## 5) Feature checklist by phase
+
+### Phase 1 – MVP (No-code platform setup)
+- Secure signup/login with OTP or OAuth
+- Profile creation with name, bio, location, family data, and photo upload
+- Photo gallery with privacy controls
+- Location-based search by radius and suburb
+- Basic “Connect” and in-app messaging
+- UI with SA and NZ color/theme prompts
+- Basic in-app purchases integration and restore flow
+- WhatsApp sharing (optional) with user consent
+
+### Phase 2 – Security and polish
+- MFA option or stronger password policies
+- Encrypted storage for sensitive data
+- Access tokens with rotation and revocation
+- Geo-queries hardened with indexing and caching
+- Moderation workflow for user-generated content
+- Accessibility improvements and localization options
+
+### Phase 3 – Growth and compliance
+- Full App Store compliance: privacy policy, terms, age ratings, data handling disclosures
+- Analytics and event tracking (opt-in)
+- In-app messaging enhancements (push notifications, read receipts)
+- Advanced search filters (interests, family size, kids’ ages)
+- Customer support and in-app reporting tools
+
+---
+
+## 6) Example prompts you can paste into your no-code platform
+
+### Front-end design prompt
+- “Create a responsive native-like front-end themed with African and New Zealand colors. Build a dashboard with:
+ - Top nav: logo, search, messages, profile
+ - Discover screen: map with radius selector and suburb list
+ - Profile editor: avatar upload, bio, location, family data, kids
+ - Photo gallery: upload, crop, privacy toggle
+ - Messages: threaded chat with attachments
+ - Store: list of in-app purchases with restore button
+ - Accessibility and light/dark theme options
+- Use a warm, welcoming vibe, with imagery featuring SA families in NZ contexts.”
+
+### Backend security prompt
+- “Design a secure backend for: user auth (OAuth2/OIDC or secure provider), user profiles with nested family data, photo storage with private/public controls, geolocation-based search, messaging with per-conversation state, and in-app purchases with restoration. Implement RBAC, field-level encryption for sensitive data, audit logs, rate limiting, and data retention policies. Provide API schemas, sample requests/responses, and data validation rules.”
+
+### App Store readiness prompt
+- “Prepare features and metadata for App Store submission:
+ - App name, description, keywords
+ - Screenshots and app previews
+ - Privacy policy, terms of service
+ - In-app purchases setup and restore flow
+ - Compliance notes for location sharing, photo access, and chat features
+ - Accessibility and localization considerations”
+
+---

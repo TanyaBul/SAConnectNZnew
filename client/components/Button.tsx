@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { StyleSheet, Pressable, ViewStyle, StyleProp } from "react-native";
+import { StyleSheet, Pressable, ViewStyle, StyleProp, ActivityIndicator } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,13 +9,16 @@ import Animated, {
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { BorderRadius, Spacing } from "@/constants/theme";
+import { BorderRadius, Spacing, Typography } from "@/constants/theme";
 
 interface ButtonProps {
   onPress?: () => void;
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
+  variant?: "primary" | "secondary" | "outline" | "ghost";
+  loading?: boolean;
+  size?: "small" | "medium" | "large";
 }
 
 const springConfig: WithSpringConfig = {
@@ -33,6 +36,9 @@ export function Button({
   children,
   style,
   disabled = false,
+  variant = "primary",
+  loading = false,
+  size = "medium",
 }: ButtonProps) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
@@ -42,49 +48,112 @@ export function Button({
   }));
 
   const handlePressIn = () => {
-    if (!disabled) {
-      scale.value = withSpring(0.98, springConfig);
+    if (!disabled && !loading) {
+      scale.value = withSpring(0.97, springConfig);
     }
   };
 
   const handlePressOut = () => {
-    if (!disabled) {
+    if (!disabled && !loading) {
       scale.value = withSpring(1, springConfig);
+    }
+  };
+
+  const getBackgroundColor = () => {
+    if (disabled) return theme.border;
+    switch (variant) {
+      case "primary":
+        return theme.primary;
+      case "secondary":
+        return theme.secondary;
+      case "outline":
+      case "ghost":
+        return "transparent";
+      default:
+        return theme.primary;
+    }
+  };
+
+  const getBorderColor = () => {
+    if (disabled) return theme.border;
+    switch (variant) {
+      case "outline":
+        return theme.primary;
+      default:
+        return "transparent";
+    }
+  };
+
+  const getTextColor = () => {
+    if (disabled) return theme.textSecondary;
+    switch (variant) {
+      case "primary":
+      case "secondary":
+        return "#FFFFFF";
+      case "outline":
+      case "ghost":
+        return theme.primary;
+      default:
+        return "#FFFFFF";
+    }
+  };
+
+  const getHeight = () => {
+    switch (size) {
+      case "small":
+        return 36;
+      case "large":
+        return 56;
+      default:
+        return Spacing.buttonHeight;
     }
   };
 
   return (
     <AnimatedPressable
-      onPress={disabled ? undefined : onPress}
+      onPress={disabled || loading ? undefined : onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      disabled={disabled}
+      disabled={disabled || loading}
       style={[
         styles.button,
         {
-          backgroundColor: theme.link,
-          opacity: disabled ? 0.5 : 1,
+          backgroundColor: getBackgroundColor(),
+          borderColor: getBorderColor(),
+          height: getHeight(),
+          opacity: disabled ? 0.6 : 1,
         },
+        variant === "outline" && styles.outline,
         style,
         animatedStyle,
       ]}
     >
-      <ThemedText
-        type="body"
-        style={[styles.buttonText, { color: theme.buttonText }]}
-      >
-        {children}
-      </ThemedText>
+      {loading ? (
+        <ActivityIndicator color={getTextColor()} size="small" />
+      ) : (
+        <ThemedText
+          type="body"
+          style={[
+            styles.buttonText,
+            { color: getTextColor(), fontFamily: Typography.link.fontFamily },
+          ]}
+        >
+          {children}
+        </ThemedText>
+      )}
     </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.full,
+    borderRadius: BorderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: Spacing.xl,
+  },
+  outline: {
+    borderWidth: 2,
   },
   buttonText: {
     fontWeight: "600",
