@@ -57,7 +57,10 @@ const STORAGE_KEYS = {
   THREADS: "@sa_connect_threads",
   PHOTOS: "@sa_connect_photos",
   EVENTS: "@sa_connect_events",
+  DATA_VERSION: "@sa_connect_data_version",
 };
+
+const CURRENT_DATA_VERSION = "2";
 
 const SAMPLE_FAMILIES: Family[] = [
   {
@@ -235,8 +238,10 @@ const SAMPLE_MESSAGES: Message[] = [
 ];
 
 export async function initializeSampleData(): Promise<void> {
+  const storedVersion = await AsyncStorage.getItem(STORAGE_KEYS.DATA_VERSION);
   const families = await AsyncStorage.getItem(STORAGE_KEYS.FAMILIES);
-  if (!families) {
+  
+  if (!families || storedVersion !== CURRENT_DATA_VERSION) {
     await AsyncStorage.setItem(STORAGE_KEYS.FAMILIES, JSON.stringify(SAMPLE_FAMILIES));
     await AsyncStorage.setItem(STORAGE_KEYS.THREADS, JSON.stringify(SAMPLE_THREADS));
     await AsyncStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(SAMPLE_MESSAGES));
@@ -245,6 +250,7 @@ export async function initializeSampleData(): Promise<void> {
       { id: "c2", userId: "user", targetUserId: "2", status: "connected", createdAt: new Date().toISOString() },
     ]));
     await AsyncStorage.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify([]));
+    await AsyncStorage.setItem(STORAGE_KEYS.DATA_VERSION, CURRENT_DATA_VERSION);
   }
 }
 
