@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export interface Kid {
+export interface FamilyMember {
   id: string;
   name: string;
   age: number;
@@ -20,7 +20,7 @@ export interface UserProfile {
     lon: number;
     radiusPreference: number;
   } | null;
-  kids: Kid[];
+  familyMembers: FamilyMember[];
   interests: string[];
   createdAt: string;
 }
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       bio: "",
       avatarUrl: null,
       location: null,
-      kids: [],
+      familyMembers: [],
       interests: [],
       createdAt: new Date().toISOString(),
     };

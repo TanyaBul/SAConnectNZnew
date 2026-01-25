@@ -93,24 +93,24 @@ export default function ProfileScreen() {
           </Pressable>
         )}
 
-        {user.kids.length > 0 ? (
+        {user.familyMembers && user.familyMembers.length > 0 ? (
           <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
             <ThemedText type="heading" style={styles.sectionTitle}>
-              Kids
+              Family Members
             </ThemedText>
-            <View style={styles.kidsGrid}>
-              {user.kids.map((kid) => (
+            <View style={styles.membersGrid}>
+              {user.familyMembers.map((member) => (
                 <View
-                  key={kid.id}
-                  style={[styles.kidCard, { backgroundColor: theme.backgroundSecondary }]}
+                  key={member.id}
+                  style={[styles.memberCard, { backgroundColor: theme.backgroundSecondary }]}
                 >
                   <Feather name="user" size={20} color={theme.primary} />
-                  <View style={styles.kidInfo}>
+                  <View style={styles.memberInfo}>
                     <ThemedText type="body" style={{ fontWeight: "500" }}>
-                      {kid.name}
+                      {member.name}
                     </ThemedText>
                     <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                      {kid.age} years old
+                      {member.age} years old
                     </ThemedText>
                   </View>
                 </View>
@@ -203,16 +203,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: Spacing.md,
   },
-  kidsGrid: {
+  membersGrid: {
     gap: Spacing.sm,
   },
-  kidCard: {
+  memberCard: {
     flexDirection: "row",
     alignItems: "center",
     padding: Spacing.md,
     borderRadius: BorderRadius.sm,
   },
-  kidInfo: {
+  memberInfo: {
     marginLeft: Spacing.md,
   },
   interestsGrid: {

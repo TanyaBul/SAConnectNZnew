@@ -6,11 +6,11 @@ SA Connect NZ is a mobile app for South African families living in New Zealand t
 ## Current State
 MVP implementation complete with:
 - User authentication (signup/signin with AsyncStorage)
-- Family profile creation with kids and interests
+- Family profile creation with family members (names + ages) and interests
 - Location-based discovery of nearby families
 - Connection requests between families
 - In-app messaging system
-- Community photo sharing
+- Events tab for community events (braais, playdates, etc.)
 - Settings and profile editing
 
 ## Project Structure

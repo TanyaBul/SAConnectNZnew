@@ -15,7 +15,7 @@ import { Avatar } from "@/components/Avatar";
 import { InterestTag } from "@/components/InterestTag";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/constants/theme";
-import { useAuth, Kid } from "@/context/AuthContext";
+import { useAuth, FamilyMember } from "@/context/AuthContext";
 import { INTERESTS_OPTIONS } from "@/lib/storage";
 import { AuthStackParamList } from "@/navigation/AuthStackNavigator";
 import { showImagePickerOptions, launchCamera, launchImageLibrary } from "@/lib/imagePicker";
@@ -29,7 +29,7 @@ export default function CreateProfileScreen() {
 
   const [bio, setBio] = useState(user?.bio || "");
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
-  const [kids, setKids] = useState<Kid[]>(user?.kids || []);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(user?.familyMembers || []);
   const [selectedInterests, setSelectedInterests] = useState<string[]>(
     user?.interests || []
   );
@@ -54,20 +54,20 @@ export default function CreateProfileScreen() {
     );
   };
 
-  const addKid = () => {
-    setKids([...kids, { id: Date.now().toString(), name: "", age: 0 }]);
+  const addFamilyMember = () => {
+    setFamilyMembers([...familyMembers, { id: Date.now().toString(), name: "", age: 0 }]);
   };
 
-  const updateKid = (id: string, field: "name" | "age", value: string | number) => {
-    setKids(
-      kids.map((kid) =>
-        kid.id === id ? { ...kid, [field]: value } : kid
+  const updateFamilyMember = (id: string, field: "name" | "age", value: string | number) => {
+    setFamilyMembers(
+      familyMembers.map((member) =>
+        member.id === id ? { ...member, [field]: value } : member
       )
     );
   };
 
-  const removeKid = (id: string) => {
-    setKids(kids.filter((kid) => kid.id !== id));
+  const removeFamilyMember = (id: string) => {
+    setFamilyMembers(familyMembers.filter((member) => member.id !== id));
   };
 
   const toggleInterest = (interest: string) => {
@@ -85,7 +85,7 @@ export default function CreateProfileScreen() {
       await updateProfile({
         bio,
         avatarUrl: avatarUri || undefined,
-        kids: kids.filter((k) => k.name.trim()),
+        familyMembers: familyMembers.filter((m) => m.name.trim()),
         interests: selectedInterests,
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -133,44 +133,44 @@ export default function CreateProfileScreen() {
         />
 
         <ThemedText type="heading" style={styles.sectionTitle}>
-          Your Kids
+          Family Members
         </ThemedText>
         <ThemedText
           type="caption"
           style={[styles.sectionHint, { color: theme.textSecondary }]}
         >
-          Optional - helps match with families at similar life stages
+          Optional - add names and ages (e.g., John 40)
         </ThemedText>
 
-        {kids.map((kid, index) => (
+        {familyMembers.map((member) => (
           <View
-            key={kid.id}
-            style={[styles.kidRow, { borderColor: theme.border }]}
+            key={member.id}
+            style={[styles.memberRow, { borderColor: theme.border }]}
           >
-            <View style={styles.kidInputs}>
-              <View style={styles.kidNameInput}>
+            <View style={styles.memberInputs}>
+              <View style={styles.memberNameInput}>
                 <Input
                   label="Name"
-                  placeholder="Child's name"
-                  value={kid.name}
-                  onChangeText={(text) => updateKid(kid.id, "name", text)}
+                  placeholder="e.g., John"
+                  value={member.name}
+                  onChangeText={(text) => updateFamilyMember(member.id, "name", text)}
                 />
               </View>
-              <View style={styles.kidAgeInput}>
+              <View style={styles.memberAgeInput}>
                 <Input
                   label="Age"
                   placeholder="0"
-                  value={kid.age ? String(kid.age) : ""}
+                  value={member.age ? String(member.age) : ""}
                   onChangeText={(text) =>
-                    updateKid(kid.id, "age", parseInt(text) || 0)
+                    updateFamilyMember(member.id, "age", parseInt(text) || 0)
                   }
                   keyboardType="numeric"
                 />
               </View>
             </View>
             <Pressable
-              onPress={() => removeKid(kid.id)}
-              style={[styles.removeKid, { backgroundColor: theme.error + "15" }]}
+              onPress={() => removeFamilyMember(member.id)}
+              style={[styles.removeMember, { backgroundColor: theme.error + "15" }]}
             >
               <Feather name="x" size={18} color={theme.error} />
             </Pressable>
@@ -178,12 +178,12 @@ export default function CreateProfileScreen() {
         ))}
 
         <Pressable
-          onPress={addKid}
-          style={[styles.addKidButton, { borderColor: theme.border }]}
+          onPress={addFamilyMember}
+          style={[styles.addMemberButton, { borderColor: theme.border }]}
         >
           <Feather name="plus" size={20} color={theme.primary} />
           <ThemedText type="body" style={{ color: theme.primary, marginLeft: Spacing.sm }}>
-            Add a Child
+            Add Family Member
           </ThemedText>
         </Pressable>
 
@@ -251,24 +251,24 @@ const styles = StyleSheet.create({
   sectionHint: {
     marginBottom: Spacing.lg,
   },
-  kidRow: {
+  memberRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     borderRadius: BorderRadius.sm,
     marginBottom: Spacing.sm,
   },
-  kidInputs: {
+  memberInputs: {
     flex: 1,
     flexDirection: "row",
     gap: Spacing.md,
   },
-  kidNameInput: {
+  memberNameInput: {
     flex: 2,
   },
-  kidAgeInput: {
+  memberAgeInput: {
     flex: 1,
   },
-  removeKid: {
+  removeMember: {
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing["3xl"],
     marginLeft: Spacing.sm,
   },
-  addKidButton: {
+  addMemberButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

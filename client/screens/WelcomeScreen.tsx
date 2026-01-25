@@ -51,7 +51,7 @@ export default function WelcomeScreen() {
             />
             <FeatureBullet
               icon="users"
-              text="Create a family profile with your kids"
+              text="Create a family profile with your members"
             />
             <FeatureBullet
               icon="image"

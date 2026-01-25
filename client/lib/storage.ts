@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { UserProfile, Kid } from "@/context/AuthContext";
+import { UserProfile, FamilyMember } from "@/context/AuthContext";
 
 export interface Family extends UserProfile {
   distance?: number;
@@ -73,9 +73,11 @@ const SAMPLE_FAMILIES: Family[] = [
       lon: 174.7811,
       radiusPreference: 25,
     },
-    kids: [
-      { id: "k1", name: "Pieter", age: 8 },
-      { id: "k2", name: "Lize", age: 5 },
+    familyMembers: [
+      { id: "m1", name: "Johan", age: 42 },
+      { id: "m2", name: "Mariette", age: 39 },
+      { id: "m3", name: "Pieter", age: 8 },
+      { id: "m4", name: "Lize", age: 5 },
     ],
     interests: ["Hiking", "Braais", "Rugby", "Beach"],
     createdAt: new Date().toISOString(),
@@ -94,10 +96,11 @@ const SAMPLE_FAMILIES: Family[] = [
       lon: 174.7567,
       radiusPreference: 15,
     },
-    kids: [
-      { id: "k3", name: "Priya", age: 6 },
-      { id: "k4", name: "Raj", age: 4 },
-      { id: "k5", name: "Maya", age: 2 },
+    familyMembers: [
+      { id: "m5", name: "Ravi", age: 38 },
+      { id: "m6", name: "Priya", age: 6 },
+      { id: "m7", name: "Raj", age: 4 },
+      { id: "m8", name: "Maya", age: 2 },
     ],
     interests: ["Cricket", "Cooking", "Church", "SA Culture"],
     createdAt: new Date().toISOString(),
@@ -116,9 +119,10 @@ const SAMPLE_FAMILIES: Family[] = [
       lon: 174.7403,
       radiusPreference: 20,
     },
-    kids: [
-      { id: "k6", name: "Anri", age: 10 },
-      { id: "k7", name: "Elsa", age: 7 },
+    familyMembers: [
+      { id: "m9", name: "Willem", age: 45 },
+      { id: "m10", name: "Anri", age: 10 },
+      { id: "m11", name: "Elsa", age: 7 },
     ],
     interests: ["Schools", "Sports", "Markets", "Netball"],
     createdAt: new Date().toISOString(),
@@ -137,8 +141,9 @@ const SAMPLE_FAMILIES: Family[] = [
       lon: 172.5874,
       radiusPreference: 30,
     },
-    kids: [
-      { id: "k8", name: "Thabo", age: 12 },
+    familyMembers: [
+      { id: "m12", name: "Sipho", age: 41 },
+      { id: "m13", name: "Thabo", age: 12 },
     ],
     interests: ["Business", "SA Culture", "Rugby", "Music"],
     createdAt: new Date().toISOString(),
@@ -157,9 +162,11 @@ const SAMPLE_FAMILIES: Family[] = [
       lon: 174.7361,
       radiusPreference: 10,
     },
-    kids: [
-      { id: "k9", name: "Jake", age: 9 },
-      { id: "k10", name: "Emma", age: 6 },
+    familyMembers: [
+      { id: "m14", name: "Mike", age: 36 },
+      { id: "m15", name: "Sarah", age: 34 },
+      { id: "m16", name: "Jake", age: 9 },
+      { id: "m17", name: "Emma", age: 6 },
     ],
     interests: ["Braais", "Rugby", "Beach", "Cycling"],
     createdAt: new Date().toISOString(),

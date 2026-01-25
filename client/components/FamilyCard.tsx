@@ -22,7 +22,7 @@ interface FamilyCardProps {
   avatarUrl: string | null;
   distance: number;
   interests: string[];
-  kidsCount: number;
+  membersCount: number;
   onPress: () => void;
   onConnect: () => void;
   isConnected?: boolean;
@@ -37,7 +37,7 @@ export function FamilyCard({
   avatarUrl,
   distance,
   interests,
-  kidsCount,
+  membersCount,
   onPress,
   onConnect,
   isConnected = false,
@@ -93,7 +93,7 @@ export function FamilyCard({
             >
               {distance < 1 ? "< 1 km away" : `${distance} km away`}
             </ThemedText>
-            {kidsCount > 0 ? (
+            {membersCount > 0 ? (
               <>
                 <View style={[styles.dot, { backgroundColor: theme.border }]} />
                 <Feather name="users" size={14} color={theme.textSecondary} />
@@ -101,7 +101,7 @@ export function FamilyCard({
                   type="caption"
                   style={[styles.metaText, { color: theme.textSecondary }]}
                 >
-                  {kidsCount} {kidsCount === 1 ? "kid" : "kids"}
+                  {membersCount} {membersCount === 1 ? "member" : "members"}
                 </ThemedText>
               </>
             ) : null}
