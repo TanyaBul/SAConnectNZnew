@@ -122,7 +122,7 @@ export function Avatar({ uri, size = "medium", onPress, showEditBadge }: AvatarP
 
 const styles = StyleSheet.create({
   container: {
-    borderWidth: 4,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
   },

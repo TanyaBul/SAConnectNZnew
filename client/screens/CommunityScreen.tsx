@@ -6,7 +6,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from "@react-navigation/native";
 import { Image } from "expo-image";
 import { Feather } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
+import { showImagePickerOptions, launchCamera, launchImageLibrary } from "@/lib/imagePicker";
 import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -67,27 +67,31 @@ export default function CommunityScreen() {
     loadData();
   };
 
-  const handleAddPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      try {
-        const newPhoto = await addPhoto(
-          user?.id || "user",
-          result.assets[0].uri,
-          ""
-        );
-        setPhotos([{ ...newPhoto, family: null }, ...photos]);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch (error) {
-        console.error("Error adding photo:", error);
+  const handleAddPhoto = () => {
+    showImagePickerOptions(
+      async () => {
+        const result = await launchCamera();
+        if (result) {
+          await savePhoto(result.uri);
+        }
+      },
+      async () => {
+        const result = await launchImageLibrary();
+        if (result) {
+          await savePhoto(result.uri);
+        }
       }
+    );
+  };
+
+  const savePhoto = async (uri: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const newPhoto = await addPhoto(user?.id || "user", uri, "");
+      setPhotos([{ ...newPhoto, family: null }, ...photos]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      console.error("Error adding photo:", error);
     }
   };
 

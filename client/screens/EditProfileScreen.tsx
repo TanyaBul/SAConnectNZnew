@@ -16,6 +16,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/constants/theme";
 import { useAuth, Kid } from "@/context/AuthContext";
 import { INTERESTS_OPTIONS } from "@/lib/storage";
+import { showImagePickerOptions, launchCamera, launchImageLibrary } from "@/lib/imagePicker";
 
 export default function EditProfileScreen() {
   const { theme } = useTheme();
@@ -26,11 +27,31 @@ export default function EditProfileScreen() {
 
   const [familyName, setFamilyName] = useState(user?.familyName || "");
   const [bio, setBio] = useState(user?.bio || "");
+  const [avatarUri, setAvatarUri] = useState<string | null>(user?.avatarUrl || null);
   const [kids, setKids] = useState<Kid[]>(user?.kids || []);
   const [selectedInterests, setSelectedInterests] = useState<string[]>(
     user?.interests || []
   );
   const [loading, setLoading] = useState(false);
+
+  const handleAvatarPress = () => {
+    showImagePickerOptions(
+      async () => {
+        const result = await launchCamera();
+        if (result) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          setAvatarUri(result.uri);
+        }
+      },
+      async () => {
+        const result = await launchImageLibrary();
+        if (result) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          setAvatarUri(result.uri);
+        }
+      }
+    );
+  };
 
   const addKid = () => {
     setKids([...kids, { id: Date.now().toString(), name: "", age: 0 }]);
@@ -63,6 +84,7 @@ export default function EditProfileScreen() {
       await updateProfile({
         familyName,
         bio,
+        avatarUrl: avatarUri || undefined,
         kids: kids.filter((k) => k.name.trim()),
         interests: selectedInterests,
       });
@@ -88,7 +110,13 @@ export default function EditProfileScreen() {
         ]}
       >
         <View style={styles.avatarSection}>
-          <Avatar uri={user?.avatarUrl} size="xlarge" showEditBadge onPress={() => {}} />
+          <Avatar uri={avatarUri} size="xlarge" showEditBadge onPress={handleAvatarPress} />
+          <ThemedText
+            type="caption"
+            style={[styles.avatarHint, { color: theme.textSecondary }]}
+          >
+            Tap to change photo
+          </ThemedText>
         </View>
 
         <Input
@@ -198,6 +226,9 @@ const styles = StyleSheet.create({
   avatarSection: {
     alignItems: "center",
     marginBottom: Spacing["3xl"],
+  },
+  avatarHint: {
+    marginTop: Spacing.md,
   },
   sectionTitle: {
     marginBottom: Spacing.lg,

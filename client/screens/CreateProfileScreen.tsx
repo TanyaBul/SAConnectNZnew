@@ -18,6 +18,7 @@ import { BorderRadius, Spacing } from "@/constants/theme";
 import { useAuth, Kid } from "@/context/AuthContext";
 import { INTERESTS_OPTIONS } from "@/lib/storage";
 import { AuthStackParamList } from "@/navigation/AuthStackNavigator";
+import { showImagePickerOptions, launchCamera, launchImageLibrary } from "@/lib/imagePicker";
 
 export default function CreateProfileScreen() {
   const { theme } = useTheme();
@@ -27,11 +28,31 @@ export default function CreateProfileScreen() {
   const { user, updateProfile } = useAuth();
 
   const [bio, setBio] = useState(user?.bio || "");
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [kids, setKids] = useState<Kid[]>(user?.kids || []);
   const [selectedInterests, setSelectedInterests] = useState<string[]>(
     user?.interests || []
   );
   const [loading, setLoading] = useState(false);
+
+  const handleAvatarPress = () => {
+    showImagePickerOptions(
+      async () => {
+        const result = await launchCamera();
+        if (result) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          setAvatarUri(result.uri);
+        }
+      },
+      async () => {
+        const result = await launchImageLibrary();
+        if (result) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          setAvatarUri(result.uri);
+        }
+      }
+    );
+  };
 
   const addKid = () => {
     setKids([...kids, { id: Date.now().toString(), name: "", age: 0 }]);
@@ -63,6 +84,7 @@ export default function CreateProfileScreen() {
     try {
       await updateProfile({
         bio,
+        avatarUrl: avatarUri || undefined,
         kids: kids.filter((k) => k.name.trim()),
         interests: selectedInterests,
       });
@@ -88,7 +110,7 @@ export default function CreateProfileScreen() {
         ]}
       >
         <View style={styles.avatarSection}>
-          <Avatar size="xlarge" showEditBadge onPress={() => {}} />
+          <Avatar uri={avatarUri} size="xlarge" showEditBadge onPress={handleAvatarPress} />
           <ThemedText
             type="caption"
             style={[styles.avatarHint, { color: theme.textSecondary }]}
