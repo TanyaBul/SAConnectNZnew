@@ -76,7 +76,7 @@ assets/images/              # Generated app assets
 1. **Onboarding**: Welcome → Sign Up → Create Profile → Location Permission
 2. **Discover Tab**: Find families nearby with distance, interests, and connect
 3. **Messages Tab**: Chat with connected families
-4. **Community Tab**: Share and view photos
+4. **Events Tab**: Create and browse community events (braais, playdates, sports, etc.)
 5. **Profile Tab**: View/edit family profile, kids, interests
 
 ## Running the App

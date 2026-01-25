@@ -6,14 +6,14 @@ import { Platform, StyleSheet } from "react-native";
 
 import DiscoverStackNavigator from "@/navigation/DiscoverStackNavigator";
 import MessagesStackNavigator from "@/navigation/MessagesStackNavigator";
-import CommunityStackNavigator from "@/navigation/CommunityStackNavigator";
+import EventsStackNavigator from "@/navigation/EventsStackNavigator";
 import ProfileStackNavigator from "@/navigation/ProfileStackNavigator";
 import { useTheme } from "@/hooks/useTheme";
 
 export type MainTabParamList = {
   DiscoverTab: undefined;
   MessagesTab: undefined;
-  CommunityTab: undefined;
+  EventsTab: undefined;
   ProfileTab: undefined;
 };
 
@@ -69,12 +69,12 @@ export default function MainTabNavigator() {
         }}
       />
       <Tab.Screen
-        name="CommunityTab"
-        component={CommunityStackNavigator}
+        name="EventsTab"
+        component={EventsStackNavigator}
         options={{
-          title: "Community",
+          title: "Events",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="image" size={size} color={color} />
+            <Feather name="calendar" size={size} color={color} />
           ),
         }}
       />

@@ -38,12 +38,25 @@ export interface Photo {
   uploadedAt: string;
 }
 
+export interface Event {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  category: string;
+  createdAt: string;
+}
+
 const STORAGE_KEYS = {
   FAMILIES: "@sa_connect_families",
   CONNECTIONS: "@sa_connect_connections",
   MESSAGES: "@sa_connect_messages",
   THREADS: "@sa_connect_threads",
   PHOTOS: "@sa_connect_photos",
+  EVENTS: "@sa_connect_events",
 };
 
 const SAMPLE_FAMILIES: Family[] = [
@@ -326,6 +339,48 @@ export async function addPhoto(userId: string, uri: string, caption: string): Pr
   await AsyncStorage.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify(photos));
   return newPhoto;
 }
+
+export async function getEvents(): Promise<Event[]> {
+  const data = await AsyncStorage.getItem(STORAGE_KEYS.EVENTS);
+  return data ? JSON.parse(data) : [];
+}
+
+export async function addEvent(
+  userId: string,
+  title: string,
+  description: string,
+  date: string,
+  time: string,
+  location: string,
+  category: string
+): Promise<Event> {
+  const events = await getEvents();
+  const newEvent: Event = {
+    id: Date.now().toString(),
+    userId,
+    title,
+    description,
+    date,
+    time,
+    location,
+    category,
+    createdAt: new Date().toISOString(),
+  };
+  events.unshift(newEvent);
+  await AsyncStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
+  return newEvent;
+}
+
+export const EVENT_CATEGORIES = [
+  "Braai",
+  "Playdate",
+  "Sports",
+  "Cultural",
+  "Market",
+  "Social",
+  "Kids",
+  "Other",
+];
 
 export function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);

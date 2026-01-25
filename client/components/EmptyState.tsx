@@ -8,7 +8,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 
 interface EmptyStateProps {
-  image: "discover" | "messages" | "community";
+  image: "discover" | "messages" | "community" | "events";
   title: string;
   description: string;
   actionLabel?: string;
@@ -19,6 +19,7 @@ const IMAGES = {
   discover: require("../../assets/images/empty-discover.png"),
   messages: require("../../assets/images/empty-messages.png"),
   community: require("../../assets/images/empty-community.png"),
+  events: require("../../assets/images/empty-events.png"),
 };
 
 export function EmptyState({
