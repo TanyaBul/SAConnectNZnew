@@ -66,11 +66,11 @@ assets/images/              # Generated app assets
 ```
 
 ## Design System
-- **Primary Color**: #D84315 (warm red)
-- **Secondary Color**: #00796B (teal-green)
-- **Accent**: #FFA726 (sunny yellow)
+- **Primary Color**: #0D9488 (teal - trust, connection)
+- **Secondary Color**: #64748B (slate gray - neutral)
+- **Accent**: #06B6D4 (cyan - fresh, modern)
 - **Font**: Poppins (Google Font)
-- **Theme**: Warm earth tones blending SA warmth with NZ freshness
+- **Theme**: Clean, modern, and welcoming with neutral teal-focused palette
 
 ## Key Features
 1. **Onboarding**: Welcome → Sign Up → Create Profile → Location Permission
