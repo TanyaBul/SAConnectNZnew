@@ -1,11 +1,10 @@
 import React, { useState, useCallback } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, Pressable, Modal, ActivityIndicator, Platform } from "react-native";
+import { View, StyleSheet, FlatList, RefreshControl, Pressable, Modal, ActivityIndicator, Platform, TextInput as RNTextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -17,9 +16,14 @@ import { Input } from "@/components/Input";
 import { InterestTag } from "@/components/InterestTag";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
-import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
+import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
 import { getEvents, getFamilies, addEvent, formatRelativeTime, Event, Family, EVENT_CATEGORIES } from "@/lib/storage";
 import { useAuth } from "@/context/AuthContext";
+
+let DateTimePicker: any = null;
+if (Platform.OS !== "web") {
+  DateTimePicker = require("@react-native-community/datetimepicker").default;
+}
 
 interface EventWithFamily extends Event {
   family: Family | null;
@@ -47,6 +51,9 @@ export default function EventsScreen() {
   
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  
+  const [webDateInput, setWebDateInput] = useState("");
+  const [webTimeInput, setWebTimeInput] = useState("");
 
   const loadData = useCallback(async () => {
     try {
@@ -87,6 +94,8 @@ export default function EventsScreen() {
     setEventTime(new Date());
     setLocation("");
     setCategory("Social");
+    setWebDateInput("");
+    setWebTimeInput("");
   };
 
   const formatDateForDisplay = (date: Date) => {
@@ -128,6 +137,20 @@ export default function EventsScreen() {
     }
   };
 
+  const getDateForSubmission = () => {
+    if (Platform.OS === "web" && webDateInput) {
+      return webDateInput;
+    }
+    return formatDateForStorage(eventDate);
+  };
+
+  const getTimeForSubmission = () => {
+    if (Platform.OS === "web" && webTimeInput) {
+      return webTimeInput;
+    }
+    return formatTimeForDisplay(eventTime);
+  };
+
   const handleAddEvent = async () => {
     if (!title.trim() || !location.trim()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -140,8 +163,8 @@ export default function EventsScreen() {
         user?.id || "user",
         title.trim(),
         description.trim(),
-        formatDateForStorage(eventDate),
-        formatTimeForDisplay(eventTime),
+        getDateForSubmission(),
+        getTimeForSubmission(),
         location.trim(),
         category
       );
@@ -220,6 +243,133 @@ export default function EventsScreen() {
     </Pressable>
   );
 
+  const renderDatePicker = () => {
+    if (Platform.OS === "web") {
+      return (
+        <View style={styles.webInputContainer}>
+          <ThemedText type="caption" style={styles.fieldLabel}>Date</ThemedText>
+          <View style={[styles.webInputWrapper, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
+            <Feather name="calendar" size={18} color={theme.primary} style={styles.webInputIcon} />
+            <RNTextInput
+              style={[styles.webInput, { color: theme.text, fontFamily: Typography.body.fontFamily }]}
+              placeholder="YYYY-MM-DD (e.g., 2026-02-15)"
+              placeholderTextColor={theme.textSecondary}
+              value={webDateInput}
+              onChangeText={setWebDateInput}
+              testID="input-date"
+            />
+          </View>
+        </View>
+      );
+    }
+    
+    return (
+      <>
+        <ThemedText type="caption" style={styles.fieldLabel}>Date</ThemedText>
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            setShowDatePicker(true);
+          }}
+          style={[styles.pickerButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
+        >
+          <Feather name="calendar" size={18} color={theme.primary} />
+          <ThemedText type="body" style={{ marginLeft: Spacing.md, flex: 1 }}>
+            {formatDateForDisplay(eventDate)}
+          </ThemedText>
+          <Feather name="chevron-down" size={18} color={theme.textSecondary} />
+        </Pressable>
+        
+        {showDatePicker && DateTimePicker ? (
+          <View style={styles.pickerContainer}>
+            <DateTimePicker
+              value={eventDate}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={handleDateChange}
+              minimumDate={new Date()}
+              textColor={theme.text}
+              accentColor={theme.primary}
+            />
+            {Platform.OS === "ios" ? (
+              <Button
+                variant="secondary"
+                size="small"
+                onPress={() => setShowDatePicker(false)}
+                style={styles.doneButton}
+              >
+                Done
+              </Button>
+            ) : null}
+          </View>
+        ) : null}
+      </>
+    );
+  };
+
+  const renderTimePicker = () => {
+    if (Platform.OS === "web") {
+      return (
+        <View style={styles.webInputContainer}>
+          <ThemedText type="caption" style={styles.fieldLabel}>Time</ThemedText>
+          <View style={[styles.webInputWrapper, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
+            <Feather name="clock" size={18} color={theme.primary} style={styles.webInputIcon} />
+            <RNTextInput
+              style={[styles.webInput, { color: theme.text, fontFamily: Typography.body.fontFamily }]}
+              placeholder="e.g., 2:00 PM"
+              placeholderTextColor={theme.textSecondary}
+              value={webTimeInput}
+              onChangeText={setWebTimeInput}
+              testID="input-time"
+            />
+          </View>
+        </View>
+      );
+    }
+    
+    return (
+      <>
+        <ThemedText type="caption" style={styles.fieldLabel}>Time</ThemedText>
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            setShowTimePicker(true);
+          }}
+          style={[styles.pickerButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
+        >
+          <Feather name="clock" size={18} color={theme.primary} />
+          <ThemedText type="body" style={{ marginLeft: Spacing.md, flex: 1 }}>
+            {formatTimeForDisplay(eventTime)}
+          </ThemedText>
+          <Feather name="chevron-down" size={18} color={theme.textSecondary} />
+        </Pressable>
+        
+        {showTimePicker && DateTimePicker ? (
+          <View style={styles.pickerContainer}>
+            <DateTimePicker
+              value={eventTime}
+              mode="time"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={handleTimeChange}
+              textColor={theme.text}
+              accentColor={theme.primary}
+            />
+            {Platform.OS === "ios" ? (
+              <Button
+                variant="secondary"
+                size="small"
+                onPress={() => setShowTimePicker(false)}
+                style={styles.doneButton}
+              >
+                Done
+              </Button>
+            ) : null}
+          </View>
+        ) : null}
+      </>
+    );
+  };
+
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.backgroundRoot }]}>
@@ -295,6 +445,7 @@ export default function EventsScreen() {
               placeholder="e.g., Weekend Braai at the Park"
               value={title}
               onChangeText={setTitle}
+              testID="input-title"
             />
             
             <Input
@@ -304,90 +455,19 @@ export default function EventsScreen() {
               onChangeText={setDescription}
               multiline
               numberOfLines={3}
+              testID="input-description"
             />
             
-            <ThemedText type="caption" style={styles.fieldLabel}>Date</ThemedText>
-            <Pressable
-              onPress={() => {
-                Haptics.selectionAsync();
-                setShowDatePicker(true);
-              }}
-              style={[styles.pickerButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
-            >
-              <Feather name="calendar" size={18} color={theme.primary} />
-              <ThemedText type="body" style={{ marginLeft: Spacing.md, flex: 1 }}>
-                {formatDateForDisplay(eventDate)}
-              </ThemedText>
-              <Feather name="chevron-down" size={18} color={theme.textSecondary} />
-            </Pressable>
+            {renderDatePicker()}
             
-            {showDatePicker ? (
-              <View style={styles.pickerContainer}>
-                <DateTimePicker
-                  value={eventDate}
-                  mode="date"
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  onChange={handleDateChange}
-                  minimumDate={new Date()}
-                  textColor={theme.text}
-                  accentColor={theme.primary}
-                />
-                {Platform.OS === "ios" ? (
-                  <Button
-                    variant="secondary"
-                    size="small"
-                    onPress={() => setShowDatePicker(false)}
-                    style={styles.doneButton}
-                  >
-                    Done
-                  </Button>
-                ) : null}
-              </View>
-            ) : null}
-            
-            <ThemedText type="caption" style={styles.fieldLabel}>Time</ThemedText>
-            <Pressable
-              onPress={() => {
-                Haptics.selectionAsync();
-                setShowTimePicker(true);
-              }}
-              style={[styles.pickerButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
-            >
-              <Feather name="clock" size={18} color={theme.primary} />
-              <ThemedText type="body" style={{ marginLeft: Spacing.md, flex: 1 }}>
-                {formatTimeForDisplay(eventTime)}
-              </ThemedText>
-              <Feather name="chevron-down" size={18} color={theme.textSecondary} />
-            </Pressable>
-            
-            {showTimePicker ? (
-              <View style={styles.pickerContainer}>
-                <DateTimePicker
-                  value={eventTime}
-                  mode="time"
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  onChange={handleTimeChange}
-                  textColor={theme.text}
-                  accentColor={theme.primary}
-                />
-                {Platform.OS === "ios" ? (
-                  <Button
-                    variant="secondary"
-                    size="small"
-                    onPress={() => setShowTimePicker(false)}
-                    style={styles.doneButton}
-                  >
-                    Done
-                  </Button>
-                ) : null}
-              </View>
-            ) : null}
+            {renderTimePicker()}
             
             <Input
               label="Location"
               placeholder="e.g., Cornwall Park, Auckland"
               value={location}
               onChangeText={setLocation}
+              testID="input-location"
             />
             
             <ThemedText type="caption" style={styles.categoryLabel}>Category</ThemedText>
@@ -410,6 +490,7 @@ export default function EventsScreen() {
               loading={saving}
               size="large"
               style={styles.createButton}
+              testID="button-create-event"
             >
               Create Event
             </Button>
@@ -510,18 +591,38 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.sm,
     borderWidth: 1,
+    marginBottom: Spacing.lg,
   },
   pickerContainer: {
     marginTop: Spacing.sm,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.lg,
   },
   doneButton: {
     marginTop: Spacing.sm,
     alignSelf: "flex-end",
   },
+  webInputContainer: {
+    marginBottom: Spacing.lg,
+  },
+  webInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+    height: Spacing.inputHeight,
+  },
+  webInputIcon: {
+    marginLeft: Spacing.lg,
+  },
+  webInput: {
+    flex: 1,
+    paddingHorizontal: Spacing.md,
+    fontSize: 16,
+    height: "100%",
+  },
   categoryLabel: {
     marginBottom: Spacing.sm,
-    marginTop: Spacing.lg,
+    marginTop: Spacing.md,
   },
   categoryGrid: {
     flexDirection: "row",
