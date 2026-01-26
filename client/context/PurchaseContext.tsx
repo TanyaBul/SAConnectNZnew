@@ -34,6 +34,12 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const initializePurchases = async () => {
+    if (Platform.OS === "web") {
+      console.log("Web platform detected. Using RevenueCat in Browser Mode.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       Purchases.setLogLevel(LOG_LEVEL.DEBUG);
 
@@ -107,6 +113,14 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
   };
 
   const restorePurchases = async (): Promise<boolean> => {
+    if (Platform.OS === "web") {
+      Alert.alert(
+        "Restore Purchases",
+        "To restore your purchases, please open the app on your iPhone or Android device and try again. Purchases made through the App Store or Google Play can only be restored on mobile devices."
+      );
+      return false;
+    }
+
     try {
       setIsLoading(true);
       const info = await Purchases.restorePurchases();
