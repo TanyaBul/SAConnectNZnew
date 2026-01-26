@@ -22,7 +22,7 @@ export default function WelcomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <LinearGradient
-        colors={isDark ? ["#2A2420", "#3E332D"] : ["#F5F3F0", "#FAF9F7"]}
+        colors={isDark ? ["#1A2A2A", "#264040"] : ["#E8F5F5", "#F0F9F9"]}
         style={StyleSheet.absoluteFill}
       />
       
