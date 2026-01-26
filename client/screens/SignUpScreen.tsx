@@ -146,7 +146,7 @@ export default function SignUpScreen() {
           <ThemedText type="small" style={{ color: theme.textSecondary }}>
             By signing up, you agree to our{" "}
           </ThemedText>
-          <Pressable>
+          <Pressable onPress={() => navigation.navigate("TermsOfService")}>
             <ThemedText type="small" style={{ color: theme.primary }}>
               Terms
             </ThemedText>
@@ -154,7 +154,7 @@ export default function SignUpScreen() {
           <ThemedText type="small" style={{ color: theme.textSecondary }}>
             {" "}and{" "}
           </ThemedText>
-          <Pressable>
+          <Pressable onPress={() => navigation.navigate("PrivacyPolicy")}>
             <ThemedText type="small" style={{ color: theme.primary }}>
               Privacy Policy
             </ThemedText>

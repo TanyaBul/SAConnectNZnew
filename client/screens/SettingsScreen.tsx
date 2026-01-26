@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Switch, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
@@ -9,11 +11,13 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 export default function SettingsScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { signOut, user } = useAuth();
 
   const [notifications, setNotifications] = useState(true);
@@ -124,7 +128,10 @@ export default function SettingsScreen() {
             <Feather name="chevron-right" size={20} color={theme.textSecondary} />
           </Pressable>
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
-          <Pressable style={styles.row}>
+          <Pressable 
+            style={styles.row}
+            onPress={() => navigation.navigate("PrivacyPolicy")}
+          >
             <View style={styles.rowLeft}>
               <Feather name="file-text" size={20} color={theme.textSecondary} />
               <ThemedText type="body" style={styles.rowLabel}>
@@ -134,7 +141,10 @@ export default function SettingsScreen() {
             <Feather name="chevron-right" size={20} color={theme.textSecondary} />
           </Pressable>
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
-          <Pressable style={styles.row}>
+          <Pressable 
+            style={styles.row}
+            onPress={() => navigation.navigate("TermsOfService")}
+          >
             <View style={styles.rowLeft}>
               <Feather name="book" size={20} color={theme.textSecondary} />
               <ThemedText type="body" style={styles.rowLabel}>

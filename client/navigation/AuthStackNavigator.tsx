@@ -6,6 +6,8 @@ import SignUpScreen from "@/screens/SignUpScreen";
 import SignInScreen from "@/screens/SignInScreen";
 import CreateProfileScreen from "@/screens/CreateProfileScreen";
 import LocationPermissionScreen from "@/screens/LocationPermissionScreen";
+import PrivacyPolicyScreen from "@/screens/PrivacyPolicyScreen";
+import TermsOfServiceScreen from "@/screens/TermsOfServiceScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
 export type AuthStackParamList = {
@@ -14,6 +16,8 @@ export type AuthStackParamList = {
   SignIn: undefined;
   CreateProfile: undefined;
   LocationPermission: undefined;
+  PrivacyPolicy: undefined;
+  TermsOfService: undefined;
 };
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -47,6 +51,16 @@ export default function AuthStackNavigator() {
         name="LocationPermission"
         component={LocationPermissionScreen}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{ headerTitle: "Privacy Policy" }}
+      />
+      <Stack.Screen
+        name="TermsOfService"
+        component={TermsOfServiceScreen}
+        options={{ headerTitle: "Terms of Service" }}
       />
     </Stack.Navigator>
   );

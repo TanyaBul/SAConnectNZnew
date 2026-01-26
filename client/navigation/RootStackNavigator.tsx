@@ -8,6 +8,8 @@ import FamilyDetailScreen from "@/screens/FamilyDetailScreen";
 import ChatScreen from "@/screens/ChatScreen";
 import EditProfileScreen from "@/screens/EditProfileScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
+import PrivacyPolicyScreen from "@/screens/PrivacyPolicyScreen";
+import TermsOfServiceScreen from "@/screens/TermsOfServiceScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -20,6 +22,8 @@ export type RootStackParamList = {
   Chat: { threadId: string; family: Family };
   EditProfile: undefined;
   Settings: undefined;
+  PrivacyPolicy: undefined;
+  TermsOfService: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -79,6 +83,20 @@ export default function RootStackNavigator() {
             component={SettingsScreen}
             options={{
               headerTitle: "Settings",
+            }}
+          />
+          <Stack.Screen
+            name="PrivacyPolicy"
+            component={PrivacyPolicyScreen}
+            options={{
+              headerTitle: "Privacy Policy",
+            }}
+          />
+          <Stack.Screen
+            name="TermsOfService"
+            component={TermsOfServiceScreen}
+            options={{
+              headerTitle: "Terms of Service",
             }}
           />
         </>
