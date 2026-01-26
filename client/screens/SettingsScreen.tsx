@@ -41,6 +41,37 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to delete your account? This action cannot be undone. All your data, messages, connections, and events will be permanently removed.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete Account",
+          style: "destructive",
+          onPress: () => {
+            Alert.alert(
+              "Confirm Deletion",
+              "This is your final confirmation. Type 'DELETE' to confirm you want to permanently delete your account.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Yes, Delete Everything",
+                  style: "destructive",
+                  onPress: async () => {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                    await signOut();
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
+  };
+
   const toggleNotifications = (value: boolean) => {
     Haptics.selectionAsync();
     setNotifications(value);
@@ -164,6 +195,15 @@ export default function SettingsScreen() {
               <Feather name="log-out" size={20} color={theme.error} />
               <ThemedText type="body" style={[styles.rowLabel, { color: theme.error }]}>
                 Sign Out
+              </ThemedText>
+            </View>
+          </Pressable>
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          <Pressable style={styles.row} onPress={handleDeleteAccount}>
+            <View style={styles.rowLeft}>
+              <Feather name="trash-2" size={20} color={theme.error} />
+              <ThemedText type="body" style={[styles.rowLabel, { color: theme.error }]}>
+                Delete Account
               </ThemedText>
             </View>
           </Pressable>
