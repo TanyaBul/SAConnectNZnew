@@ -11,6 +11,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
+import { usePurchases } from "@/context/PurchaseContext";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 export default function SettingsScreen() {
@@ -19,8 +20,10 @@ export default function SettingsScreen() {
   const headerHeight = useHeaderHeight();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { signOut, user } = useAuth();
+  const { restorePurchases, isSubscribed, isLoading: isPurchaseLoading } = usePurchases();
 
   const [notifications, setNotifications] = useState(true);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [locationSharing, setLocationSharing] = useState(true);
 
   const handleLogout = () => {
@@ -39,6 +42,13 @@ export default function SettingsScreen() {
         },
       ]
     );
+  };
+
+  const handleRestorePurchases = async () => {
+    setIsRestoring(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await restorePurchases();
+    setIsRestoring(false);
   };
 
   const handleDeleteAccount = () => {
@@ -108,6 +118,46 @@ export default function SettingsScreen() {
               {user?.email}
             </ThemedText>
           </View>
+        </View>
+
+        <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
+          <ThemedText type="caption" style={[styles.sectionHeader, { color: theme.textSecondary }]}>
+            Subscription
+          </ThemedText>
+          <Pressable 
+            style={styles.row}
+            onPress={() => navigation.navigate("Subscription")}
+          >
+            <View style={styles.rowLeft}>
+              <Feather name="credit-card" size={20} color={theme.textSecondary} />
+              <ThemedText type="body" style={styles.rowLabel}>
+                Manage Subscription
+              </ThemedText>
+            </View>
+            <View style={styles.rowRight}>
+              {isSubscribed ? (
+                <View style={[styles.badge, { backgroundColor: theme.success + "20" }]}>
+                  <ThemedText type="small" style={{ color: theme.success }}>
+                    Active
+                  </ThemedText>
+                </View>
+              ) : null}
+              <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+            </View>
+          </Pressable>
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          <Pressable 
+            style={[styles.row, isRestoring && styles.rowDisabled]}
+            onPress={handleRestorePurchases}
+            disabled={isRestoring}
+          >
+            <View style={styles.rowLeft}>
+              <Feather name="refresh-cw" size={20} color={theme.textSecondary} />
+              <ThemedText type="body" style={styles.rowLabel}>
+                {isRestoring ? "Restoring..." : "Restore Purchases"}
+              </ThemedText>
+            </View>
+          </Pressable>
         </View>
 
         <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
@@ -250,8 +300,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
   },
+  rowRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
   rowLabel: {
     marginLeft: Spacing.md,
+  },
+  rowDisabled: {
+    opacity: 0.5,
+  },
+  badge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.sm,
   },
   divider: {
     height: 1,
