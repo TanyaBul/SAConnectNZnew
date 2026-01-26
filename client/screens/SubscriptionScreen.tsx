@@ -74,7 +74,7 @@ export default function SubscriptionScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: theme.background }]}>
+      <View style={[styles.container, styles.centered, { backgroundColor: theme.backgroundRoot }]}>
         <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
@@ -82,7 +82,7 @@ export default function SubscriptionScreen() {
 
   if (isSubscribed) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={[
@@ -106,8 +106,8 @@ export default function SubscriptionScreen() {
             </ThemedText>
           </View>
 
-          <View style={[styles.section, { backgroundColor: theme.surface }]}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
+          <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
+            <ThemedText type="heading" style={styles.sectionTitle}>
               Your Benefits
             </ThemedText>
             {FEATURES.map((feature, index) => (
@@ -134,7 +134,7 @@ export default function SubscriptionScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -185,7 +185,7 @@ export default function SubscriptionScreen() {
                   style={[
                     styles.packageCard,
                     { 
-                      backgroundColor: theme.surface,
+                      backgroundColor: theme.backgroundDefault,
                       borderColor: isSelected ? theme.primary : theme.border,
                       borderWidth: isSelected ? 2 : 1,
                     },
@@ -214,7 +214,7 @@ export default function SubscriptionScreen() {
                       ) : null}
                     </View>
                     <View>
-                      <ThemedText type="subtitle">
+                      <ThemedText type="heading">
                         {pkg.product.title || (isMonthly ? "Monthly" : "Annual")}
                       </ThemedText>
                       <ThemedText type="body" style={{ color: theme.textSecondary }}>
@@ -227,7 +227,7 @@ export default function SubscriptionScreen() {
             })}
           </View>
         ) : (
-          <View style={[styles.noPackages, { backgroundColor: theme.surface }]}>
+          <View style={[styles.noPackages, { backgroundColor: theme.backgroundDefault }]}>
             <Feather name="info" size={24} color={theme.textSecondary} />
             <ThemedText type="body" style={[styles.noPackagesText, { color: theme.textSecondary }]}>
               Subscription packages will be available when you download the app from the App Store or Google Play.

@@ -71,7 +71,7 @@ function FAQAccordion({ item }: { item: FAQItem }) {
 
   return (
     <Pressable
-      style={[styles.faqItem, { backgroundColor: theme.surface }]}
+      style={[styles.faqItem, { backgroundColor: theme.backgroundDefault }]}
       onPress={handlePress}
     >
       <View style={styles.faqHeader}>
@@ -113,7 +113,7 @@ export default function HelpFAQScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -136,7 +136,7 @@ export default function HelpFAQScreen() {
           <View style={[styles.iconCircle, { backgroundColor: theme.primary }]}>
             <Feather name="mail" size={24} color="#FFFFFF" />
           </View>
-          <ThemedText type="subtitle" style={styles.supportTitle}>
+          <ThemedText type="heading" style={styles.supportTitle}>
             Need more help?
           </ThemedText>
           <ThemedText type="body" style={[styles.supportText, { color: theme.textSecondary }]}>
@@ -150,7 +150,7 @@ export default function HelpFAQScreen() {
           </ThemedText>
         </View>
 
-        <ThemedText type="subtitle" style={styles.sectionTitle}>
+        <ThemedText type="heading" style={styles.sectionTitle}>
           Frequently Asked Questions
         </ThemedText>
 
@@ -160,7 +160,7 @@ export default function HelpFAQScreen() {
           ))}
         </View>
 
-        <View style={[styles.bottomCard, { backgroundColor: theme.surface }]}>
+        <View style={[styles.bottomCard, { backgroundColor: theme.backgroundDefault }]}>
           <Feather name="message-circle" size={32} color={theme.primary} />
           <ThemedText type="body" style={[styles.bottomText, { color: theme.textSecondary }]}>
             Still have questions? We're happy to help!
