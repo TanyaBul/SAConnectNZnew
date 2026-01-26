@@ -4,7 +4,7 @@
 
 **Purpose**: SA Connect NZ helps South African families in New Zealand find and connect with other SA families based on location, interests, and life stages. It's a digital gathering place for families far from home.
 
-**Aesthetic Direction**: Clean, modern, and welcoming. The design uses teal as the primary color to evoke trust, connection, and the natural beauty of New Zealand. The overall feel is professional yet approachable, with a neutral color palette that lets content shine.
+**Aesthetic Direction**: Warm, welcoming, and community-focused. The design uses warm orange as the primary color to evoke the warmth of Africa, paired with teal to represent New Zealand's natural beauty. The overall feel is inviting and culturally connected.
 
 **Design Philosophy**: Minimal and functional. Focus on usability and clarity over decorative elements. The app should feel like a trusted community platform, accessible to all.
 
@@ -94,16 +94,19 @@
 
 ## Color Palette
 
-**Primary**: #0D9488 (teal - trust, connection, nature)
-**Secondary**: #64748B (slate gray - neutral, professional)
-**Accent**: #06B6D4 (cyan - fresh, modern)
-**Background**: #F8FAFC (cool white)
+**Primary**: #E8703A (warm orange - Africa sunset, energy)
+**Secondary**: #1A7F7F (teal - New Zealand, connection)
+**Accent**: #F5A623 (golden orange - warmth, community)
+**Background**: #F0F9F9 (soft teal white)
 **Surface**: #FFFFFF (white cards)
+**Background Secondary**: #E8F5F5 (light teal)
 **Text Primary**: #1E293B (slate dark)
 **Text Secondary**: #64748B (slate gray)
-**Border**: #E2E8F0 (light slate)
+**Border**: #C5E0E0 (teal border)
 **Error**: #DC2626
 **Success**: #16A34A
+
+**Brand Story**: Colors inspired by the logo - warm orange/red represents Africa's sunset and warmth, while teal represents New Zealand's natural beauty and connection between continents.
 
 ## Typography
 
@@ -127,8 +130,8 @@
 
 ## Assets
 
-1. **icon.png** - App icon with abstract connection/family theme in teal
-2. **splash-icon.png** - Simplified version of app icon for launch screen
+1. **icon.png** - App logo featuring Africa and New Zealand forming a heart with family figures
+2. **splash-icon.png** - Same as app icon for brand consistency
 3. **welcome-hero.png** - Abstract illustration of connection/community
 4. **empty-discover.png** - Simple map illustration
 5. **empty-messages.png** - Message bubble illustration
