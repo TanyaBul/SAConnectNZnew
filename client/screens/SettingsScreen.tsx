@@ -118,7 +118,10 @@ export default function SettingsScreen() {
           <ThemedText type="caption" style={[styles.sectionHeader, { color: theme.textSecondary }]}>
             Support
           </ThemedText>
-          <Pressable style={styles.row}>
+          <Pressable 
+            style={styles.row}
+            onPress={() => navigation.navigate("HelpFAQ")}
+          >
             <View style={styles.rowLeft}>
               <Feather name="help-circle" size={20} color={theme.textSecondary} />
               <ThemedText type="body" style={styles.rowLabel}>

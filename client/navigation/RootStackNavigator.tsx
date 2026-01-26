@@ -10,6 +10,7 @@ import EditProfileScreen from "@/screens/EditProfileScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import PrivacyPolicyScreen from "@/screens/PrivacyPolicyScreen";
 import TermsOfServiceScreen from "@/screens/TermsOfServiceScreen";
+import HelpFAQScreen from "@/screens/HelpFAQScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -24,6 +25,7 @@ export type RootStackParamList = {
   Settings: undefined;
   PrivacyPolicy: undefined;
   TermsOfService: undefined;
+  HelpFAQ: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -97,6 +99,13 @@ export default function RootStackNavigator() {
             component={TermsOfServiceScreen}
             options={{
               headerTitle: "Terms of Service",
+            }}
+          />
+          <Stack.Screen
+            name="HelpFAQ"
+            component={HelpFAQScreen}
+            options={{
+              headerTitle: "Help & FAQ",
             }}
           />
         </>
