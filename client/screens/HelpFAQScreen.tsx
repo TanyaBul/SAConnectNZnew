@@ -10,7 +10,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/constants/theme";
 import { Button } from "@/components/Button";
 
-const SUPPORT_EMAIL = "support@saconnectnz.com";
+const SUPPORT_EMAIL = "saconnectnz@gmail.com";
 
 interface FAQItem {
   question: string;
@@ -56,7 +56,7 @@ const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "How do I report inappropriate behavior?",
-    answer: "If you encounter any inappropriate content or behavior, please contact us at support@saconnectnz.com with details about the issue. We review all reports and take appropriate action.",
+    answer: "If you encounter any inappropriate content or behavior, please contact us at saconnectnz@gmail.com with details about the issue. We review all reports and take appropriate action.",
   },
 ];
 

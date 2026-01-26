@@ -293,7 +293,7 @@ export default function TermsOfServiceScreen() {
             If you have questions about these Terms of Service, please contact us at:
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
-            Email: support@saconnectnz.com
+            Email: saconnectnz@gmail.com
           </ThemedText>
         </View>
       </ScrollView>

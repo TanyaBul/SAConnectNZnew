@@ -208,7 +208,7 @@ export default function PrivacyPolicyScreen() {
             If you have questions or concerns about this Privacy Policy or our data practices, please contact us at:
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
-            Email: privacy@saconnectnz.com
+            Email: saconnectnz@gmail.com
           </ThemedText>
         </View>
       </ScrollView>
