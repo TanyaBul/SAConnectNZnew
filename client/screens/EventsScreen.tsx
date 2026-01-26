@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, Pressable, Modal, ActivityIndicator } from "react-native";
+import { View, StyleSheet, FlatList, RefreshControl, Pressable, Modal, ActivityIndicator, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -39,10 +40,13 @@ export default function EventsScreen() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [eventDate, setEventDate] = useState(new Date());
+  const [eventTime, setEventTime] = useState(new Date());
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState("Social");
+  
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -79,14 +83,53 @@ export default function EventsScreen() {
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setDate("");
-    setTime("");
+    setEventDate(new Date());
+    setEventTime(new Date());
     setLocation("");
     setCategory("Social");
   };
 
+  const formatDateForDisplay = (date: Date) => {
+    return date.toLocaleDateString("en-NZ", { 
+      weekday: "short", 
+      day: "numeric", 
+      month: "long", 
+      year: "numeric" 
+    });
+  };
+
+  const formatTimeForDisplay = (date: Date) => {
+    return date.toLocaleTimeString("en-NZ", { 
+      hour: "numeric", 
+      minute: "2-digit",
+      hour12: true 
+    });
+  };
+
+  const formatDateForStorage = (date: Date) => {
+    return date.toISOString().split("T")[0];
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === "android") {
+      setShowDatePicker(false);
+    }
+    if (selectedDate) {
+      setEventDate(selectedDate);
+    }
+  };
+
+  const handleTimeChange = (event: any, selectedTime?: Date) => {
+    if (Platform.OS === "android") {
+      setShowTimePicker(false);
+    }
+    if (selectedTime) {
+      setEventTime(selectedTime);
+    }
+  };
+
   const handleAddEvent = async () => {
-    if (!title.trim() || !date.trim() || !location.trim()) {
+    if (!title.trim() || !location.trim()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
@@ -97,8 +140,8 @@ export default function EventsScreen() {
         user?.id || "user",
         title.trim(),
         description.trim(),
-        date.trim(),
-        time.trim(),
+        formatDateForStorage(eventDate),
+        formatTimeForDisplay(eventTime),
         location.trim(),
         category
       );
@@ -263,19 +306,82 @@ export default function EventsScreen() {
               numberOfLines={3}
             />
             
-            <Input
-              label="Date"
-              placeholder="e.g., 2026-02-15"
-              value={date}
-              onChangeText={setDate}
-            />
+            <ThemedText type="caption" style={styles.fieldLabel}>Date</ThemedText>
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                setShowDatePicker(true);
+              }}
+              style={[styles.pickerButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
+            >
+              <Feather name="calendar" size={18} color={theme.primary} />
+              <ThemedText type="body" style={{ marginLeft: Spacing.md, flex: 1 }}>
+                {formatDateForDisplay(eventDate)}
+              </ThemedText>
+              <Feather name="chevron-down" size={18} color={theme.textSecondary} />
+            </Pressable>
             
-            <Input
-              label="Time (optional)"
-              placeholder="e.g., 2:00 PM"
-              value={time}
-              onChangeText={setTime}
-            />
+            {showDatePicker ? (
+              <View style={styles.pickerContainer}>
+                <DateTimePicker
+                  value={eventDate}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={handleDateChange}
+                  minimumDate={new Date()}
+                  textColor={theme.text}
+                  accentColor={theme.primary}
+                />
+                {Platform.OS === "ios" ? (
+                  <Button
+                    variant="secondary"
+                    size="small"
+                    onPress={() => setShowDatePicker(false)}
+                    style={styles.doneButton}
+                  >
+                    Done
+                  </Button>
+                ) : null}
+              </View>
+            ) : null}
+            
+            <ThemedText type="caption" style={styles.fieldLabel}>Time</ThemedText>
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                setShowTimePicker(true);
+              }}
+              style={[styles.pickerButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
+            >
+              <Feather name="clock" size={18} color={theme.primary} />
+              <ThemedText type="body" style={{ marginLeft: Spacing.md, flex: 1 }}>
+                {formatTimeForDisplay(eventTime)}
+              </ThemedText>
+              <Feather name="chevron-down" size={18} color={theme.textSecondary} />
+            </Pressable>
+            
+            {showTimePicker ? (
+              <View style={styles.pickerContainer}>
+                <DateTimePicker
+                  value={eventTime}
+                  mode="time"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={handleTimeChange}
+                  textColor={theme.text}
+                  accentColor={theme.primary}
+                />
+                {Platform.OS === "ios" ? (
+                  <Button
+                    variant="secondary"
+                    size="small"
+                    onPress={() => setShowTimePicker(false)}
+                    style={styles.doneButton}
+                  >
+                    Done
+                  </Button>
+                ) : null}
+              </View>
+            ) : null}
             
             <Input
               label="Location"
@@ -393,9 +499,29 @@ const styles = StyleSheet.create({
   modalContent: {
     padding: Spacing.xl,
   },
+  fieldLabel: {
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  pickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.lg,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  pickerContainer: {
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  doneButton: {
+    marginTop: Spacing.sm,
+    alignSelf: "flex-end",
+  },
   categoryLabel: {
     marginBottom: Spacing.sm,
-    marginTop: Spacing.sm,
+    marginTop: Spacing.lg,
   },
   categoryGrid: {
     flexDirection: "row",
