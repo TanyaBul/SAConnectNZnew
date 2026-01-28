@@ -9,42 +9,37 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ConversationItem } from "@/components/ConversationItem";
 import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/context/AuthContext";
 import { Spacing } from "@/constants/theme";
-import { getThreads, getFamilies, formatRelativeTime, MessageThread, Family } from "@/lib/storage";
+import { getThreads, formatRelativeTime, MessageThread } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-
-interface ThreadWithFamily extends MessageThread {
-  family: Family | null;
-}
 
 export default function MessagesScreen() {
   const { theme } = useTheme();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const [threads, setThreads] = useState<ThreadWithFamily[]>([]);
+  const [threads, setThreads] = useState<MessageThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    
     try {
-      const [threadsData, familiesData] = await Promise.all([
-        getThreads(),
-        getFamilies(),
-      ]);
-      
-      const threadsWithFamilies = threadsData.map((thread) => {
-        const otherParticipantId = thread.participants.find((p) => p !== "user");
-        const family = familiesData.find((f) => f.id === otherParticipantId) || null;
-        return { ...thread, family };
-      });
-      
+      const threadsData = await getThreads(user.id);
       setThreads(
-        threadsWithFamilies.sort(
-          (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
-        )
+        threadsData.sort((a, b) => {
+          const dateA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+          const dateB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+          return dateB - dateA;
+        })
       );
     } catch (error) {
       console.error("Error loading threads:", error);
@@ -52,7 +47,7 @@ export default function MessagesScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -65,25 +60,23 @@ export default function MessagesScreen() {
     loadData();
   };
 
-  const handleThreadPress = (thread: ThreadWithFamily) => {
-    if (thread.family) {
-      navigation.navigate("Chat", {
-        threadId: thread.id,
-        family: thread.family,
-      });
-    }
+  const handleThreadPress = (thread: MessageThread) => {
+    navigation.navigate("Chat", {
+      threadId: thread.id,
+      family: thread.otherUser as any,
+    });
   };
 
-  const renderItem = ({ item }: { item: ThreadWithFamily }) => {
-    if (!item.family) return null;
+  const renderItem = ({ item }: { item: MessageThread }) => {
+    if (!item.otherUser) return null;
     
     return (
       <ConversationItem
         id={item.id}
-        familyName={item.family.familyName}
-        avatarUrl={item.family.avatarUrl}
-        lastMessage={item.lastMessage}
-        timestamp={formatRelativeTime(item.lastMessageAt)}
+        familyName={item.otherUser.familyName}
+        avatarUrl={item.otherUser.avatarUrl}
+        lastMessage={item.lastMessage || ""}
+        timestamp={item.lastMessageAt ? formatRelativeTime(item.lastMessageAt) : ""}
         unreadCount={item.unreadCount}
         onPress={() => handleThreadPress(item)}
       />

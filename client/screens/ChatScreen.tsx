@@ -9,12 +9,14 @@ import * as Haptics from "expo-haptics";
 import { MessageBubble } from "@/components/MessageBubble";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/context/AuthContext";
 import { BorderRadius, Spacing, Typography } from "@/constants/theme";
 import { getMessages, sendMessage, markThreadAsRead, formatRelativeTime, Message } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 export default function ChatScreen() {
   const { theme } = useTheme();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const route = useRoute<RouteProp<RootStackParamList, "Chat">>();
   const { threadId, family } = route.params;
@@ -26,8 +28,10 @@ export default function ChatScreen() {
 
   useEffect(() => {
     loadMessages();
-    markThreadAsRead(threadId);
-  }, [threadId]);
+    if (user?.id) {
+      markThreadAsRead(threadId, user.id);
+    }
+  }, [threadId, user?.id]);
 
   const loadMessages = async () => {
     const data = await getMessages(threadId);
@@ -37,16 +41,18 @@ export default function ChatScreen() {
   };
 
   const handleSend = async () => {
-    if (!inputText.trim() || sending) return;
+    if (!inputText.trim() || sending || !user?.id) return;
     
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSending(true);
     
     try {
-      const newMessage = await sendMessage(threadId, inputText.trim());
-      setMessages([newMessage, ...messages]);
-      setInputText("");
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const newMessage = await sendMessage(threadId, user.id, inputText.trim());
+      if (newMessage) {
+        setMessages([newMessage, ...messages]);
+        setInputText("");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
@@ -58,7 +64,7 @@ export default function ChatScreen() {
     <MessageBubble
       text={item.text}
       timestamp={formatRelativeTime(item.timestamp)}
-      isSent={item.senderId === "user"}
+      isSent={item.senderId === user?.id}
       isRead={item.read}
     />
   );

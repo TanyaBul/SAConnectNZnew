@@ -17,16 +17,12 @@ import { InterestTag } from "@/components/InterestTag";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
-import { getEvents, getFamilies, addEvent, formatRelativeTime, Event, Family, EVENT_CATEGORIES } from "@/lib/storage";
+import { getEvents, addEvent, formatRelativeTime, Event, EVENT_CATEGORIES } from "@/lib/storage";
 import { useAuth } from "@/context/AuthContext";
 
 let DateTimePicker: any = null;
 if (Platform.OS !== "web") {
   DateTimePicker = require("@react-native-community/datetimepicker").default;
-}
-
-interface EventWithFamily extends Event {
-  family: Family | null;
 }
 
 export default function EventsScreen() {
@@ -36,7 +32,7 @@ export default function EventsScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { user } = useAuth();
 
-  const [events, setEvents] = useState<EventWithFamily[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -57,17 +53,8 @@ export default function EventsScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const [eventsData, familiesData] = await Promise.all([
-        getEvents(),
-        getFamilies(),
-      ]);
-      
-      const eventsWithFamilies = eventsData.map((event) => {
-        const family = familiesData.find((f) => f.id === event.userId) || null;
-        return { ...event, family };
-      });
-      
-      setEvents(eventsWithFamilies);
+      const eventsData = await getEvents();
+      setEvents(eventsData);
     } catch (error) {
       console.error("Error loading events:", error);
     } finally {
@@ -157,10 +144,12 @@ export default function EventsScreen() {
       return;
     }
 
+    if (!user?.id) return;
+    
     setSaving(true);
     try {
       const newEvent = await addEvent(
-        user?.id || "user",
+        user.id,
         title.trim(),
         description.trim(),
         getDateForSubmission(),
@@ -168,10 +157,12 @@ export default function EventsScreen() {
         location.trim(),
         category
       );
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setEvents([{ ...newEvent, family: null }, ...events]);
-      setModalVisible(false);
-      resetForm();
+      if (newEvent) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setEvents([newEvent, ...events]);
+        setModalVisible(false);
+        resetForm();
+      }
     } catch (error) {
       console.error("Error adding event:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -189,7 +180,7 @@ export default function EventsScreen() {
     }
   };
 
-  const renderEvent = ({ item }: { item: EventWithFamily }) => (
+  const renderEvent = ({ item }: { item: Event }) => (
     <Pressable
       style={[
         styles.eventCard,
@@ -234,9 +225,9 @@ export default function EventsScreen() {
       
       <View style={[styles.eventFooter, { borderTopColor: theme.border }]}>
         <View style={styles.hostInfo}>
-          <Avatar uri={item.family?.avatarUrl} size="small" />
+          <Avatar uri={item.user?.avatarUrl} size="small" />
           <ThemedText type="caption" style={{ marginLeft: Spacing.sm }}>
-            {item.family?.familyName || "Your Family"}
+            {item.user?.familyName || "Your Family"}
           </ThemedText>
         </View>
       </View>
@@ -490,7 +481,6 @@ export default function EventsScreen() {
               loading={saving}
               size="large"
               style={styles.createButton}
-              testID="button-create-event"
             >
               Create Event
             </Button>

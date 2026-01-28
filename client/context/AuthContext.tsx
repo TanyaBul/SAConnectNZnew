@@ -1,10 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiRequest, getApiUrl } from "@/lib/query-client";
 
 export interface FamilyMember {
   id: string;
   name: string;
   age: number;
+}
+
+export interface UserLocation {
+  suburb: string;
+  city: string;
+  lat: number;
+  lon: number;
+  radiusPreference: number;
 }
 
 export interface UserProfile {
@@ -13,13 +22,7 @@ export interface UserProfile {
   familyName: string;
   bio: string;
   avatarUrl: string | null;
-  location: {
-    suburb: string;
-    city: string;
-    lat: number;
-    lon: number;
-    radiusPreference: number;
-  } | null;
+  location: UserLocation | null;
   familyMembers: FamilyMember[];
   interests: string[];
   createdAt: string;
@@ -34,6 +37,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   completeOnboarding: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -42,6 +46,26 @@ const STORAGE_KEYS = {
   USER: "@sa_connect_user",
   ONBOARDED: "@sa_connect_onboarded",
 };
+
+function transformDbUserToProfile(dbUser: any): UserProfile {
+  return {
+    id: dbUser.id,
+    email: dbUser.email,
+    familyName: dbUser.familyName,
+    bio: dbUser.bio || "",
+    avatarUrl: dbUser.avatarUrl || null,
+    location: dbUser.suburb && dbUser.city ? {
+      suburb: dbUser.suburb,
+      city: dbUser.city,
+      lat: dbUser.lat || 0,
+      lon: dbUser.lon || 0,
+      radiusPreference: dbUser.radiusPreference || 25,
+    } : null,
+    familyMembers: dbUser.familyMembers || [],
+    interests: dbUser.interests || [],
+    createdAt: dbUser.createdAt,
+  };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -60,7 +84,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ]);
       
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        setUser(parsed);
+        
+        try {
+          const response = await fetch(new URL(`/api/users/${parsed.id}`, getApiUrl()).toString());
+          if (response.ok) {
+            const freshUser = await response.json();
+            const transformedUser = transformDbUserToProfile(freshUser);
+            setUser(transformedUser);
+            await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(transformedUser));
+          }
+        } catch (error) {
+          console.log("Could not refresh user from server, using cached data");
+        }
       }
       setIsOnboarded(storedOnboarded === "true");
     } catch (error) {
@@ -71,32 +108,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const storedUser = await AsyncStorage.getItem(STORAGE_KEYS.USER);
-    if (storedUser) {
-      const parsed = JSON.parse(storedUser);
-      if (parsed.email === email) {
-        setUser(parsed);
-        return;
-      }
+    try {
+      const response = await apiRequest("POST", "/api/auth/signin", { email, password });
+      const data = await response.json();
+      const transformedUser = transformDbUserToProfile(data.user);
+      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(transformedUser));
+      setUser(transformedUser);
+    } catch (error: any) {
+      console.error("Sign in error:", error);
+      throw new Error("Invalid email or password");
     }
-    throw new Error("Invalid credentials");
   };
 
   const signUp = async (email: string, password: string, familyName: string) => {
-    const newUser: UserProfile = {
-      id: Date.now().toString(),
-      email,
-      familyName,
-      bio: "",
-      avatarUrl: null,
-      location: null,
-      familyMembers: [],
-      interests: [],
-      createdAt: new Date().toISOString(),
-    };
-    
-    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(newUser));
-    setUser(newUser);
+    try {
+      const response = await apiRequest("POST", "/api/auth/signup", { email, password, familyName });
+      const data = await response.json();
+      const transformedUser = transformDbUserToProfile(data.user);
+      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(transformedUser));
+      setUser(transformedUser);
+    } catch (error: any) {
+      console.error("Sign up error:", error);
+      if (error.message?.includes("already registered")) {
+        throw new Error("This email is already registered");
+      }
+      throw new Error("Failed to create account. Please try again.");
+    }
   };
 
   const signOut = async () => {
@@ -108,9 +145,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return;
     
-    const updatedUser = { ...user, ...updates };
-    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
-    setUser(updatedUser);
+    try {
+      const dbUpdates: any = {};
+      
+      if (updates.familyName !== undefined) dbUpdates.familyName = updates.familyName;
+      if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
+      if (updates.avatarUrl !== undefined) dbUpdates.avatarUrl = updates.avatarUrl;
+      if (updates.interests !== undefined) dbUpdates.interests = updates.interests;
+      
+      if (updates.location) {
+        dbUpdates.suburb = updates.location.suburb;
+        dbUpdates.city = updates.location.city;
+        dbUpdates.lat = updates.location.lat;
+        dbUpdates.lon = updates.location.lon;
+        dbUpdates.radiusPreference = updates.location.radiusPreference;
+      }
+
+      const response = await apiRequest("PUT", `/api/users/${user.id}`, dbUpdates);
+      const data = await response.json();
+      const transformedUser = transformDbUserToProfile(data);
+      
+      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(transformedUser));
+      setUser(transformedUser);
+    } catch (error) {
+      console.error("Update profile error:", error);
+      throw new Error("Failed to update profile");
+    }
+  };
+
+  const refreshUser = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch(new URL(`/api/users/${user.id}`, getApiUrl()).toString());
+      if (response.ok) {
+        const freshUser = await response.json();
+        const transformedUser = transformDbUserToProfile(freshUser);
+        setUser(transformedUser);
+        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(transformedUser));
+      }
+    } catch (error) {
+      console.error("Error refreshing user:", error);
+    }
   };
 
   const completeOnboarding = async () => {
@@ -129,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         updateProfile,
         completeOnboarding,
+        refreshUser,
       }}
     >
       {children}

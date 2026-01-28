@@ -10,12 +10,14 @@ import * as Haptics from "expo-haptics";
 import { FamilyCard } from "@/components/FamilyCard";
 import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/context/AuthContext";
 import { Spacing } from "@/constants/theme";
 import { getFamilies, getConnections, addConnection, Family, Connection } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 export default function DiscoverScreen() {
   const { theme } = useTheme();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
@@ -27,10 +29,15 @@ export default function DiscoverScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       const [familiesData, connectionsData] = await Promise.all([
-        getFamilies(),
-        getConnections(),
+        getFamilies(user.id),
+        getConnections(user.id),
       ]);
       setFamilies(familiesData.sort((a, b) => (a.distance || 0) - (b.distance || 0)));
       setConnections(connectionsData);
@@ -40,7 +47,7 @@ export default function DiscoverScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -54,10 +61,14 @@ export default function DiscoverScreen() {
   };
 
   const handleConnect = async (familyId: string) => {
+    if (!user?.id) return;
+    
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      const newConnection = await addConnection(familyId);
-      setConnections([...connections, newConnection]);
+      const newConnection = await addConnection(user.id, familyId);
+      if (newConnection) {
+        setConnections([...connections, newConnection]);
+      }
     } catch (error) {
       console.error("Error connecting:", error);
     }
@@ -71,7 +82,7 @@ export default function DiscoverScreen() {
   };
 
   const handleFamilyPress = (family: Family) => {
-    navigation.navigate("FamilyDetail", { family });
+    navigation.navigate("FamilyDetail", { family: family as any });
   };
 
   const renderItem = ({ item }: { item: Family }) => {
