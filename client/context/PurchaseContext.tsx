@@ -7,8 +7,8 @@ import Purchases, {
   PurchasesError,
 } from "react-native-purchases";
 
-const REVENUECAT_API_KEY_IOS = "your_ios_api_key";
-const REVENUECAT_API_KEY_ANDROID = "your_android_api_key";
+const REVENUECAT_API_KEY_IOS = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || "";
+const REVENUECAT_API_KEY_ANDROID = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || "";
 
 interface PurchaseContextType {
   isSubscribed: boolean;
@@ -40,13 +40,18 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    const apiKey = Platform.OS === "ios" 
+      ? REVENUECAT_API_KEY_IOS 
+      : REVENUECAT_API_KEY_ANDROID;
+
+    if (!apiKey || apiKey.startsWith("your_")) {
+      console.log("RevenueCat API key not configured. Subscriptions disabled.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-
-      const apiKey = Platform.OS === "ios" 
-        ? REVENUECAT_API_KEY_IOS 
-        : REVENUECAT_API_KEY_ANDROID;
-
       await Purchases.configure({ apiKey });
       setIsConfigured(true);
 
