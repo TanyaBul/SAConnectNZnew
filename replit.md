@@ -95,6 +95,9 @@ Full PostgreSQL database integration with Drizzle ORM:
 All data persists server-side - no more demo/sample data.
 
 ## Recent Changes
+- Admin Dashboard restricted to saconnectnz@gmail.com only
+  - Client-side: Admin section only visible to admin email in Settings
+  - Server-side: Admin API endpoints verify email header for authorization
 - Added block/report user functionality
   - Users can block families (removes them from Discover feed)
   - Users can report inappropriate behavior with reason selection

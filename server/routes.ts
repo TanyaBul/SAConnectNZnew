@@ -333,8 +333,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/reports", async (_req: Request, res: Response) => {
+  const ADMIN_EMAIL = "saconnectnz@gmail.com";
+
+  app.get("/api/admin/reports", async (req: Request, res: Response) => {
     try {
+      const userEmail = req.headers["x-user-email"] as string;
+      if (userEmail !== ADMIN_EMAIL) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+      
       const reports = await storage.getReports();
       res.json(reports.map((r) => ({
         ...r,
@@ -349,6 +356,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/admin/reports/:id", async (req: Request, res: Response) => {
     try {
+      const userEmail = req.headers["x-user-email"] as string;
+      if (userEmail !== ADMIN_EMAIL) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+      
       const { id } = req.params;
       const { status } = req.body;
       
@@ -367,8 +379,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/blocks", async (_req: Request, res: Response) => {
+  app.get("/api/admin/blocks", async (req: Request, res: Response) => {
     try {
+      const userEmail = req.headers["x-user-email"] as string;
+      if (userEmail !== ADMIN_EMAIL) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+      
       const blocks = await storage.getAllBlocks();
       res.json(blocks.map((b) => ({
         ...b,

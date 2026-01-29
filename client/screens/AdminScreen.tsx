@@ -10,6 +10,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/Avatar";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/context/AuthContext";
 import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
 import { getApiUrl } from "@/lib/query-client";
 import { formatRelativeTime } from "@/lib/storage";
@@ -55,6 +56,7 @@ type TabType = "reports" | "blocks";
 
 export default function AdminScreen() {
   const { theme } = useTheme();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
 
@@ -66,9 +68,10 @@ export default function AdminScreen() {
 
   const loadData = useCallback(async () => {
     try {
+      const headers = { "x-user-email": user?.email || "" };
       const [reportsRes, blocksRes] = await Promise.all([
-        fetch(new URL("/api/admin/reports", getApiUrl()).toString()),
-        fetch(new URL("/api/admin/blocks", getApiUrl()).toString()),
+        fetch(new URL("/api/admin/reports", getApiUrl()).toString(), { headers }),
+        fetch(new URL("/api/admin/blocks", getApiUrl()).toString(), { headers }),
       ]);
 
       if (reportsRes.ok) {
@@ -86,7 +89,7 @@ export default function AdminScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [user?.email]);
 
   useFocusEffect(
     useCallback(() => {
@@ -105,7 +108,10 @@ export default function AdminScreen() {
         new URL(`/api/admin/reports/${reportId}`, getApiUrl()).toString(),
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "x-user-email": user?.email || "",
+          },
           body: JSON.stringify({ status: newStatus }),
         }
       );
