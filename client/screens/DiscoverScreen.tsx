@@ -16,22 +16,10 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
-import { getFamilies, getConnections, addConnection, updateConnectionStatus, getThreads, Family, Connection } from "@/lib/storage";
+import { getFamilies, getConnections, addConnection, updateConnectionStatus, getThreads, Family, Connection, MessageThread } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type TabType = "families" | "pending" | "messages";
-
-interface Thread {
-  id: string;
-  otherUser: {
-    id: string;
-    familyName: string;
-    avatarUrl: string | null;
-  };
-  lastMessage: string | null;
-  lastMessageAt: string | null;
-  unreadCount: number;
-}
 
 export default function DiscoverScreen() {
   const { theme } = useTheme();
@@ -44,7 +32,7 @@ export default function DiscoverScreen() {
   const [activeTab, setActiveTab] = useState<TabType>("families");
   const [families, setFamilies] = useState<Family[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
-  const [threads, setThreads] = useState<Thread[]>([]);
+  const [threads, setThreads] = useState<MessageThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -193,7 +181,7 @@ export default function DiscoverScreen() {
     );
   };
 
-  const renderMessageItem = ({ item }: { item: Thread }) => {
+  const renderMessageItem = ({ item }: { item: MessageThread }) => {
     const family = {
       id: item.otherUser.id,
       familyName: item.otherUser.familyName,
