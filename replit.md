@@ -95,6 +95,12 @@ Full PostgreSQL database integration with Drizzle ORM:
 All data persists server-side - no more demo/sample data.
 
 ## Recent Changes
+- Added Forgot Password functionality
+  - 6-digit reset code system with 15-minute expiry
+  - Multi-step flow: email → code verification → new password → success
+  - Database table: password_reset_tokens
+  - API endpoints: /api/auth/forgot-password, /api/auth/verify-reset-token, /api/auth/reset-password
+  - Reset codes displayed in app for testing (no email service integrated)
 - Admin Dashboard restricted to saconnectnz@gmail.com only
   - Client-side: Admin section only visible to admin email in Settings
   - Server-side: Admin API endpoints verify email header for authorization
@@ -103,7 +109,7 @@ All data persists server-side - no more demo/sample data.
   - Users can report inappropriate behavior with reason selection
   - Database tables: user_blocks, user_reports
 - Initial MVP build with all core screens
-- Custom design system with SA/NZ-inspired colors
+- Custom design system with SA/NZ-inspired colours
 - Generated app icon and empty state illustrations
 - Implemented authentication flow with AsyncStorage
 - Added location-based family discovery
