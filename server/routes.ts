@@ -333,6 +333,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/reports", async (_req: Request, res: Response) => {
+    try {
+      const reports = await storage.getReports();
+      res.json(reports.map((r) => ({
+        ...r,
+        reporter: sanitizeUser(r.reporter),
+        reportedUser: sanitizeUser(r.reportedUser),
+      })));
+    } catch (error) {
+      console.error("Get reports error:", error);
+      res.status(500).json({ error: "Failed to get reports" });
+    }
+  });
+
+  app.patch("/api/admin/reports/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ error: "Status is required" });
+      }
+      
+      const report = await storage.updateReportStatus(id, status);
+      if (!report) {
+        return res.status(404).json({ error: "Report not found" });
+      }
+      res.json(report);
+    } catch (error) {
+      console.error("Update report error:", error);
+      res.status(500).json({ error: "Failed to update report" });
+    }
+  });
+
+  app.get("/api/admin/blocks", async (_req: Request, res: Response) => {
+    try {
+      const blocks = await storage.getAllBlocks();
+      res.json(blocks.map((b) => ({
+        ...b,
+        user: sanitizeUser(b.user),
+        blockedUser: sanitizeUser(b.blockedUser),
+      })));
+    } catch (error) {
+      console.error("Get blocks error:", error);
+      res.status(500).json({ error: "Failed to get blocks" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

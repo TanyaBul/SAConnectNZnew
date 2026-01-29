@@ -12,6 +12,7 @@ import PrivacyPolicyScreen from "@/screens/PrivacyPolicyScreen";
 import TermsOfServiceScreen from "@/screens/TermsOfServiceScreen";
 import HelpFAQScreen from "@/screens/HelpFAQScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
+import AdminScreen from "@/screens/AdminScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -28,6 +29,7 @@ export type RootStackParamList = {
   TermsOfService: undefined;
   HelpFAQ: undefined;
   Subscription: undefined;
+  Admin: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -115,6 +117,13 @@ export default function RootStackNavigator() {
             component={SubscriptionScreen}
             options={{
               headerTitle: "Subscription",
+            }}
+          />
+          <Stack.Screen
+            name="Admin"
+            component={AdminScreen}
+            options={{
+              headerTitle: "Admin Dashboard",
             }}
           />
         </>

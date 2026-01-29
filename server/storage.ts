@@ -40,6 +40,8 @@ export interface IStorage {
   
   reportUser(reporterId: string, reportedUserId: string, reason: string, details?: string): Promise<schema.UserReport>;
   getReports(): Promise<(schema.UserReport & { reporter: schema.User; reportedUser: schema.User })[]>;
+  updateReportStatus(id: string, status: string): Promise<schema.UserReport | undefined>;
+  getAllBlocks(): Promise<(schema.UserBlock & { user: schema.User; blockedUser: schema.User })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -341,6 +343,25 @@ export class DatabaseStorage implements IStorage {
     );
 
     return reportsWithUsers.filter((r) => r.reporter && r.reportedUser);
+  }
+
+  async updateReportStatus(id: string, status: string): Promise<schema.UserReport | undefined> {
+    const [report] = await db.update(schema.userReports).set({ status }).where(eq(schema.userReports.id, id)).returning();
+    return report;
+  }
+
+  async getAllBlocks(): Promise<(schema.UserBlock & { user: schema.User; blockedUser: schema.User })[]> {
+    const blocks = await db.select().from(schema.userBlocks).orderBy(desc(schema.userBlocks.createdAt));
+    
+    const blocksWithUsers = await Promise.all(
+      blocks.map(async (block) => {
+        const user = await this.getUserById(block.userId);
+        const blockedUser = await this.getUserById(block.blockedUserId);
+        return { ...block, user: user!, blockedUser: blockedUser! };
+      })
+    );
+
+    return blocksWithUsers.filter((b) => b.user && b.blockedUser);
   }
 }
 

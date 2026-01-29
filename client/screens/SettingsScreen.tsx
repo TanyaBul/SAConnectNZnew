@@ -197,6 +197,24 @@ export default function SettingsScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
           <ThemedText type="caption" style={[styles.sectionHeader, { color: theme.textSecondary }]}>
+            Admin
+          </ThemedText>
+          <Pressable 
+            style={styles.row}
+            onPress={() => navigation.navigate("Admin")}
+          >
+            <View style={styles.rowLeft}>
+              <Feather name="shield" size={20} color={theme.primary} />
+              <ThemedText type="body" style={styles.rowLabel}>
+                Admin Dashboard
+              </ThemedText>
+            </View>
+            <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          </Pressable>
+        </View>
+
+        <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
+          <ThemedText type="caption" style={[styles.sectionHeader, { color: theme.textSecondary }]}>
             Support
           </ThemedText>
           <Pressable 
