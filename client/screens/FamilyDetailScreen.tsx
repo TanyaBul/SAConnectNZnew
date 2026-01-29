@@ -1,36 +1,46 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, Modal, Pressable, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { RouteProp, useRoute } from "@react-navigation/native";
+import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
 import { Avatar } from "@/components/Avatar";
 import { InterestTag } from "@/components/InterestTag";
 import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
-import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
+import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-import { addConnection, getConnections } from "@/lib/storage";
+import { addConnection, getConnections, blockUser, reportUser, REPORT_REASONS } from "@/lib/storage";
+import { useAuth } from "@/context/AuthContext";
 
 export default function FamilyDetailScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
+  const navigation = useNavigation();
   const route = useRoute<RouteProp<RootStackParamList, "FamilyDetail">>();
   const { family } = route.params;
+  const { user } = useAuth();
 
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [selectedReason, setSelectedReason] = useState<string>("");
+  const [reportDetails, setReportDetails] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   React.useEffect(() => {
     checkConnection();
   }, []);
 
   const checkConnection = async () => {
-    const connections = await getConnections();
+    if (!user?.id) return;
+    const connections = await getConnections(user.id);
     const connection = connections.find(
       (c) => c.targetUserId === family.id || c.userId === family.id
     );
@@ -40,16 +50,54 @@ export default function FamilyDetailScreen() {
   };
 
   const handleConnect = async () => {
+    if (!user?.id) return;
     setLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      await addConnection(family.id);
+      await addConnection(user.id, family.id);
       setConnectionStatus("pending");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error("Error connecting:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBlock = async () => {
+    if (!user?.id) return;
+    
+    setMenuVisible(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    
+    const success = await blockUser(user.id, family.id);
+    if (success) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.goBack();
+    }
+  };
+
+  const handleReport = () => {
+    setMenuVisible(false);
+    setReportModalVisible(true);
+  };
+
+  const submitReport = async () => {
+    if (!user?.id || !selectedReason) return;
+    
+    setSubmitting(true);
+    try {
+      const success = await reportUser(user.id, family.id, selectedReason, reportDetails);
+      if (success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setReportModalVisible(false);
+        setSelectedReason("");
+        setReportDetails("");
+      }
+    } catch (error) {
+      console.error("Error submitting report:", error);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -76,7 +124,7 @@ export default function FamilyDetailScreen() {
               type="body"
               style={[styles.metaText, { color: theme.textSecondary }]}
             >
-              {family.location?.suburb}, {family.location?.city}
+              {family.suburb}{family.city ? `, ${family.city}` : ""}
             </ThemedText>
           </View>
           
@@ -166,7 +214,138 @@ export default function FamilyDetailScreen() {
             Send Connection Request
           </Button>
         )}
+
+        <Pressable
+          style={[styles.moreButton, { backgroundColor: theme.backgroundDefault }]}
+          onPress={() => setMenuVisible(true)}
+        >
+          <Feather name="more-horizontal" size={20} color={theme.textSecondary} />
+          <ThemedText type="caption" style={{ color: theme.textSecondary, marginLeft: Spacing.sm }}>
+            More options
+          </ThemedText>
+        </Pressable>
       </ScrollView>
+
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
+          <View style={[styles.menuContainer, { backgroundColor: theme.backgroundDefault }]}>
+            <ThemedText type="heading" style={styles.menuTitle}>
+              Options
+            </ThemedText>
+            
+            <Pressable style={styles.menuItem} onPress={handleReport}>
+              <Feather name="flag" size={20} color="#F59E0B" />
+              <ThemedText type="body" style={[styles.menuItemText, { color: "#F59E0B" }]}>
+                Report this family
+              </ThemedText>
+            </Pressable>
+            
+            <Pressable style={styles.menuItem} onPress={handleBlock}>
+              <Feather name="slash" size={20} color={theme.error} />
+              <ThemedText type="body" style={[styles.menuItemText, { color: theme.error }]}>
+                Block this family
+              </ThemedText>
+            </Pressable>
+            
+            <Pressable
+              style={[styles.menuItem, styles.cancelItem, { borderTopColor: theme.border }]}
+              onPress={() => setMenuVisible(false)}
+            >
+              <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                Cancel
+              </ThemedText>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={reportModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setReportModalVisible(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setReportModalVisible(false)}
+        >
+          <Pressable
+            style={[styles.reportModal, { backgroundColor: theme.backgroundDefault }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.reportHeader}>
+              <ThemedText type="h3">Report Family</ThemedText>
+              <Pressable onPress={() => setReportModalVisible(false)}>
+                <Feather name="x" size={24} color={theme.textSecondary} />
+              </Pressable>
+            </View>
+
+            <ThemedText type="caption" style={{ color: theme.textSecondary, marginBottom: Spacing.lg }}>
+              Select a reason for reporting this family. Your report will be reviewed by our team.
+            </ThemedText>
+
+            <View style={styles.reasonsContainer}>
+              {REPORT_REASONS.map((reason) => (
+                <Pressable
+                  key={reason}
+                  style={[
+                    styles.reasonOption,
+                    { 
+                      borderColor: selectedReason === reason ? theme.primary : theme.border,
+                      backgroundColor: selectedReason === reason ? theme.primary + "10" : "transparent",
+                    },
+                  ]}
+                  onPress={() => setSelectedReason(reason)}
+                >
+                  <View
+                    style={[
+                      styles.radioOuter,
+                      { borderColor: selectedReason === reason ? theme.primary : theme.border },
+                    ]}
+                  >
+                    {selectedReason === reason ? (
+                      <View style={[styles.radioInner, { backgroundColor: theme.primary }]} />
+                    ) : null}
+                  </View>
+                  <ThemedText type="body">{reason}</ThemedText>
+                </Pressable>
+              ))}
+            </View>
+
+            <TextInput
+              style={[
+                styles.detailsInput,
+                {
+                  backgroundColor: theme.backgroundSecondary,
+                  borderColor: theme.border,
+                  color: theme.text,
+                },
+              ]}
+              placeholder="Additional details (optional)"
+              placeholderTextColor={theme.textSecondary}
+              value={reportDetails}
+              onChangeText={setReportDetails}
+              multiline
+              numberOfLines={3}
+            />
+
+            <Button
+              onPress={submitReport}
+              loading={submitting}
+              disabled={!selectedReason}
+              size="large"
+              style={styles.submitButton}
+            >
+              Submit Report
+            </Button>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -242,5 +421,93 @@ const styles = StyleSheet.create({
   },
   connectButton: {
     marginTop: Spacing.lg,
+  },
+  moreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.lg,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  menuContainer: {
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    paddingBottom: Spacing["3xl"],
+  },
+  menuTitle: {
+    textAlign: "center",
+    marginBottom: Spacing.lg,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.lg,
+  },
+  menuItemText: {
+    marginLeft: Spacing.md,
+  },
+  cancelItem: {
+    justifyContent: "center",
+    borderTopWidth: 1,
+    marginTop: Spacing.md,
+    paddingTop: Spacing.lg,
+  },
+  reportModal: {
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    paddingBottom: Spacing["3xl"],
+    maxHeight: "80%",
+  },
+  reportHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  reasonsContainer: {
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  reasonOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  detailsInput: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    minHeight: 80,
+    textAlignVertical: "top",
+    ...Typography.body,
+    marginBottom: Spacing.lg,
+  },
+  submitButton: {
+    marginTop: Spacing.md,
   },
 });

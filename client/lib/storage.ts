@@ -292,3 +292,67 @@ export const INTERESTS_OPTIONS = [
   "Cycling",
   "Playgroups",
 ];
+
+export const REPORT_REASONS = [
+  "Inappropriate content",
+  "Harassment or bullying",
+  "Fake profile",
+  "Spam",
+  "Other",
+];
+
+export async function blockUser(userId: string, blockedUserId: string): Promise<boolean> {
+  try {
+    const response = await fetch(new URL(`/api/users/${userId}/block`, getApiUrl()).toString(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ blockedUserId }),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error blocking user:", error);
+    return false;
+  }
+}
+
+export async function unblockUser(userId: string, blockedUserId: string): Promise<boolean> {
+  try {
+    const response = await fetch(new URL(`/api/users/${userId}/block/${blockedUserId}`, getApiUrl()).toString(), {
+      method: "DELETE",
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error unblocking user:", error);
+    return false;
+  }
+}
+
+export async function getBlockedUsers(userId: string): Promise<string[]> {
+  try {
+    const response = await fetch(new URL(`/api/users/${userId}/blocked`, getApiUrl()).toString());
+    if (!response.ok) return [];
+    return await response.json();
+  } catch (error) {
+    console.error("Error getting blocked users:", error);
+    return [];
+  }
+}
+
+export async function reportUser(
+  reporterId: string,
+  reportedUserId: string,
+  reason: string,
+  details?: string
+): Promise<boolean> {
+  try {
+    const response = await fetch(new URL("/api/reports", getApiUrl()).toString(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reporterId, reportedUserId, reason, details }),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error reporting user:", error);
+    return false;
+  }
+}
