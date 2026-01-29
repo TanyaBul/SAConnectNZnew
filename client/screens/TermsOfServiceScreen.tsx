@@ -110,7 +110,7 @@ export default function TermsOfServiceScreen() {
             • Respect the privacy of other users and their families
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
-            • Report any suspicious or inappropriate behavior
+            • Report any suspicious or inappropriate behaviour
           </ThemedText>
         </View>
 
@@ -143,7 +143,7 @@ export default function TermsOfServiceScreen() {
             • Share personal information of others without their consent
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
-            • Attempt to gain unauthorized access to the App or other users' accounts
+            • Attempt to gain unauthorised access to the App or other users' accounts
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
             • Use automated systems or bots to access the App
@@ -158,7 +158,7 @@ export default function TermsOfServiceScreen() {
             6. User-Generated Content
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
-            You retain ownership of content you post on SA Connect NZ. However, by posting content, you grant us a non-exclusive, worldwide, royalty-free license to use, display, reproduce, and distribute your content within the App for the purpose of operating the service.
+            You retain ownership of content you post on SA Connect NZ. However, by posting content, you grant us a non-exclusive, worldwide, royalty-free licence to use, display, reproduce, and distribute your content within the App for the purpose of operating the service.
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
             You are solely responsible for all content you post. You represent that you have all necessary rights to share the content and that it does not infringe on any third-party rights.
@@ -185,7 +185,7 @@ export default function TermsOfServiceScreen() {
             • We are not responsible for the content of messages between users
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
-            • You can block or report users who engage in inappropriate behavior
+            • You can block or report users who engage in inappropriate behaviour
           </ThemedText>
         </View>
 
@@ -197,7 +197,7 @@ export default function TermsOfServiceScreen() {
             Users may create and share community events through the App. Event creators are responsible for the accuracy of event information. SA Connect NZ does not verify, endorse, or guarantee any events posted by users.
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
-            Attendance at events is at your own risk. We are not liable for any incidents, injuries, or damages that may occur at user-organized events.
+            Attendance at events is at your own risk. We are not liable for any incidents, injuries, or damages that may occur at user-organised events.
           </ThemedText>
         </View>
 

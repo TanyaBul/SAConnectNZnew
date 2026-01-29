@@ -55,8 +55,8 @@ const FAQ_ITEMS: FAQItem[] = [
     answer: "Yes, we take your privacy seriously. Your data is encrypted and stored securely. We never share your personal information with third parties without your consent. Read our Privacy Policy for full details.",
   },
   {
-    question: "How do I report inappropriate behavior?",
-    answer: "If you encounter any inappropriate content or behavior, please contact us at saconnectnz@gmail.com with details about the issue. We review all reports and take appropriate action.",
+    question: "How do I report inappropriate behaviour?",
+    answer: "If you encounter any inappropriate content or behaviour, please contact us at saconnectnz@gmail.com with details about the issue. We review all reports and take appropriate action.",
   },
 ];
 
