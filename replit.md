@@ -95,6 +95,10 @@ Full PostgreSQL database integration with Drizzle ORM:
 All data persists server-side - no more demo/sample data.
 
 ## Recent Changes
+- Added block/report user functionality
+  - Users can block families (removes them from Discover feed)
+  - Users can report inappropriate behavior with reason selection
+  - Database tables: user_blocks, user_reports
 - Initial MVP build with all core screens
 - Custom design system with SA/NZ-inspired colors
 - Generated app icon and empty state illustrations
