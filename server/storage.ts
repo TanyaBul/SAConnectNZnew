@@ -32,6 +32,14 @@ export interface IStorage {
   
   getEvents(): Promise<(schema.Event & { user: schema.User })[]>;
   createEvent(userId: string, data: Omit<schema.Event, "id" | "userId" | "createdAt">): Promise<schema.Event>;
+  
+  blockUser(userId: string, blockedUserId: string): Promise<schema.UserBlock>;
+  unblockUser(userId: string, blockedUserId: string): Promise<void>;
+  getBlockedUsers(userId: string): Promise<string[]>;
+  isBlocked(userId: string, otherUserId: string): Promise<boolean>;
+  
+  reportUser(reporterId: string, reportedUserId: string, reason: string, details?: string): Promise<schema.UserReport>;
+  getReports(): Promise<(schema.UserReport & { reporter: schema.User; reportedUser: schema.User })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -84,10 +92,21 @@ export class DatabaseStorage implements IStorage {
 
   async getDiscoverFamilies(userId: string): Promise<(schema.User & { distance?: number; familyMembers: schema.FamilyMember[] })[]> {
     const currentUser = await this.getUserById(userId);
+    const blockedUserIds = await this.getBlockedUsers(userId);
+    
+    const blockedByUsers = await db.select().from(schema.userBlocks).where(
+      eq(schema.userBlocks.blockedUserId, userId)
+    );
+    const blockedByIds = blockedByUsers.map((b) => b.userId);
+    
+    const allBlockedIds = [...new Set([...blockedUserIds, ...blockedByIds])];
+    
     const allUsers = await db.select().from(schema.users).where(ne(schema.users.id, userId));
     
+    const filteredUsers = allUsers.filter((user) => !allBlockedIds.includes(user.id));
+    
     const usersWithMembers = await Promise.all(
-      allUsers.map(async (user) => {
+      filteredUsers.map(async (user) => {
         const familyMembers = await this.getFamilyMembers(user.id);
         let distance: number | undefined;
         
@@ -253,6 +272,75 @@ export class DatabaseStorage implements IStorage {
       userId,
     }).returning();
     return event;
+  }
+
+  async blockUser(userId: string, blockedUserId: string): Promise<schema.UserBlock> {
+    const existing = await db.select().from(schema.userBlocks).where(
+      and(
+        eq(schema.userBlocks.userId, userId),
+        eq(schema.userBlocks.blockedUserId, blockedUserId)
+      )
+    );
+    
+    if (existing.length > 0) {
+      return existing[0];
+    }
+
+    const [block] = await db.insert(schema.userBlocks).values({
+      userId,
+      blockedUserId,
+    }).returning();
+    return block;
+  }
+
+  async unblockUser(userId: string, blockedUserId: string): Promise<void> {
+    await db.delete(schema.userBlocks).where(
+      and(
+        eq(schema.userBlocks.userId, userId),
+        eq(schema.userBlocks.blockedUserId, blockedUserId)
+      )
+    );
+  }
+
+  async getBlockedUsers(userId: string): Promise<string[]> {
+    const blocks = await db.select().from(schema.userBlocks).where(
+      eq(schema.userBlocks.userId, userId)
+    );
+    return blocks.map((b) => b.blockedUserId);
+  }
+
+  async isBlocked(userId: string, otherUserId: string): Promise<boolean> {
+    const block = await db.select().from(schema.userBlocks).where(
+      or(
+        and(eq(schema.userBlocks.userId, userId), eq(schema.userBlocks.blockedUserId, otherUserId)),
+        and(eq(schema.userBlocks.userId, otherUserId), eq(schema.userBlocks.blockedUserId, userId))
+      )
+    );
+    return block.length > 0;
+  }
+
+  async reportUser(reporterId: string, reportedUserId: string, reason: string, details?: string): Promise<schema.UserReport> {
+    const [report] = await db.insert(schema.userReports).values({
+      reporterId,
+      reportedUserId,
+      reason,
+      details,
+    }).returning();
+    return report;
+  }
+
+  async getReports(): Promise<(schema.UserReport & { reporter: schema.User; reportedUser: schema.User })[]> {
+    const reports = await db.select().from(schema.userReports).orderBy(desc(schema.userReports.createdAt));
+    
+    const reportsWithUsers = await Promise.all(
+      reports.map(async (report) => {
+        const reporter = await this.getUserById(report.reporterId);
+        const reportedUser = await this.getUserById(report.reportedUserId);
+        return { ...report, reporter: reporter!, reportedUser: reportedUser! };
+      })
+    );
+
+    return reportsWithUsers.filter((r) => r.reporter && r.reportedUser);
   }
 }
 

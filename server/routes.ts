@@ -278,6 +278,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/users/:userId/block", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const { blockedUserId } = req.body;
+      
+      if (!blockedUserId) {
+        return res.status(400).json({ error: "Blocked user ID is required" });
+      }
+      
+      const block = await storage.blockUser(userId, blockedUserId);
+      res.json(block);
+    } catch (error) {
+      console.error("Block user error:", error);
+      res.status(500).json({ error: "Failed to block user" });
+    }
+  });
+
+  app.delete("/api/users/:userId/block/:blockedUserId", async (req: Request, res: Response) => {
+    try {
+      const { userId, blockedUserId } = req.params;
+      await storage.unblockUser(userId, blockedUserId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Unblock user error:", error);
+      res.status(500).json({ error: "Failed to unblock user" });
+    }
+  });
+
+  app.get("/api/users/:userId/blocked", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const blockedIds = await storage.getBlockedUsers(userId);
+      res.json(blockedIds);
+    } catch (error) {
+      console.error("Get blocked users error:", error);
+      res.status(500).json({ error: "Failed to get blocked users" });
+    }
+  });
+
+  app.post("/api/reports", async (req: Request, res: Response) => {
+    try {
+      const { reporterId, reportedUserId, reason, details } = req.body;
+      
+      if (!reporterId || !reportedUserId || !reason) {
+        return res.status(400).json({ error: "Reporter ID, reported user ID, and reason are required" });
+      }
+      
+      const report = await storage.reportUser(reporterId, reportedUserId, reason, details);
+      res.json(report);
+    } catch (error) {
+      console.error("Report user error:", error);
+      res.status(500).json({ error: "Failed to report user" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
