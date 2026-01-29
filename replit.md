@@ -85,7 +85,14 @@ assets/images/              # Generated app assets
 - Test on device via Expo Go by scanning QR code
 
 ## Data Persistence
-Currently using AsyncStorage for local data persistence. Sample families are pre-populated on first launch for demo purposes.
+Full PostgreSQL database integration with Drizzle ORM:
+- Users table with bcrypt password hashing for secure authentication
+- Family members linked to user profiles
+- Connections system for family-to-family requests
+- Message threads and messages for private chat
+- Events with full CRUD operations
+
+All data persists server-side - no more demo/sample data.
 
 ## Recent Changes
 - Initial MVP build with all core screens
