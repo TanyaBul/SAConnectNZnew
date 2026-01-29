@@ -272,6 +272,20 @@ export default function DiscoverScreen() {
           <Feather name="chevron-right" size={24} color={theme.textSecondary} />
         </Pressable>
 
+        {families.length < 3 ? (
+          <View style={[styles.welcomeCard, { backgroundColor: theme.backgroundDefault, ...Shadows.card }]}>
+            <View style={styles.welcomeIconRow}>
+              <Feather name="heart" size={20} color={theme.primary} />
+            </View>
+            <ThemedText type="body" style={[styles.welcomeTitle, { color: theme.text }]}>
+              Thank you for joining SA Connect NZ!
+            </ThemedText>
+            <ThemedText type="caption" style={[styles.welcomeText, { color: theme.textSecondary }]}>
+              We're just getting started. As more South African families join in your area, you'll be able to discover and connect with them here. Check back regularly — new families are joining every day!
+            </ThemedText>
+          </View>
+        ) : null}
+
         <View style={[styles.tabsContainer, { backgroundColor: theme.backgroundRoot }]}>
           <View style={[styles.tabs, { backgroundColor: theme.backgroundSecondary }]}>
             <Pressable
@@ -434,6 +448,21 @@ const styles = StyleSheet.create({
   profileInfo: {
     flex: 1,
     marginLeft: Spacing.md,
+  },
+  welcomeCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.md,
+  },
+  welcomeIconRow: {
+    marginBottom: Spacing.sm,
+  },
+  welcomeTitle: {
+    fontWeight: "600",
+    marginBottom: Spacing.xs,
+  },
+  welcomeText: {
+    lineHeight: 20,
   },
   tabsContainer: {
     paddingVertical: Spacing.sm,
