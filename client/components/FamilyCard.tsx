@@ -42,7 +42,7 @@ export function FamilyCard({
   bio,
   avatarUrl,
   distance,
-  interests,
+  interests = [],
   familyMembers = [],
   onPress,
   onConnect,
@@ -69,7 +69,7 @@ export function FamilyCard({
     onConnect();
   };
 
-  const displayInterests = interests.slice(0, 3);
+  const displayInterests = (interests || []).slice(0, 3);
 
   return (
     <AnimatedPressable
