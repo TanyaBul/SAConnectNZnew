@@ -30,8 +30,13 @@ export interface IStorage {
   sendMessage(threadId: string, senderId: string, text: string): Promise<schema.Message>;
   markThreadAsRead(threadId: string, userId: string): Promise<void>;
   
-  getEvents(): Promise<(schema.Event & { user: schema.User })[]>;
+  getEvents(): Promise<(schema.Event & { user: schema.User; attendeeCount: number; attendees: string[] })[]>;
   createEvent(userId: string, data: Omit<schema.Event, "id" | "userId" | "createdAt">): Promise<schema.Event>;
+  
+  getEventAttendees(eventId: string): Promise<schema.EventAttendee[]>;
+  addEventAttendee(eventId: string, userId: string): Promise<schema.EventAttendee>;
+  removeEventAttendee(eventId: string, userId: string): Promise<void>;
+  isAttending(eventId: string, userId: string): Promise<boolean>;
   
   blockUser(userId: string, blockedUserId: string): Promise<schema.UserBlock>;
   unblockUser(userId: string, blockedUserId: string): Promise<void>;
@@ -255,13 +260,15 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getEvents(): Promise<(schema.Event & { user: schema.User })[]> {
+  async getEvents(): Promise<(schema.Event & { user: schema.User; attendeeCount: number; attendees: string[] })[]> {
     const eventsData = await db.select().from(schema.events).orderBy(desc(schema.events.createdAt));
     
     const eventsWithUsers = await Promise.all(
       eventsData.map(async (event) => {
         const user = await this.getUserById(event.userId);
-        return { ...event, user: user! };
+        const attendeesData = await db.select().from(schema.eventAttendees).where(eq(schema.eventAttendees.eventId, event.id));
+        const attendees = attendeesData.map(a => a.userId);
+        return { ...event, user: user!, attendeeCount: attendees.length, attendees };
       })
     );
 
@@ -274,6 +281,48 @@ export class DatabaseStorage implements IStorage {
       userId,
     }).returning();
     return event;
+  }
+
+  async getEventAttendees(eventId: string): Promise<schema.EventAttendee[]> {
+    return db.select().from(schema.eventAttendees).where(eq(schema.eventAttendees.eventId, eventId));
+  }
+
+  async addEventAttendee(eventId: string, userId: string): Promise<schema.EventAttendee> {
+    const existing = await db.select().from(schema.eventAttendees).where(
+      and(
+        eq(schema.eventAttendees.eventId, eventId),
+        eq(schema.eventAttendees.userId, userId)
+      )
+    );
+    
+    if (existing.length > 0) {
+      return existing[0];
+    }
+
+    const [attendee] = await db.insert(schema.eventAttendees).values({
+      eventId,
+      userId,
+    }).returning();
+    return attendee;
+  }
+
+  async removeEventAttendee(eventId: string, userId: string): Promise<void> {
+    await db.delete(schema.eventAttendees).where(
+      and(
+        eq(schema.eventAttendees.eventId, eventId),
+        eq(schema.eventAttendees.userId, userId)
+      )
+    );
+  }
+
+  async isAttending(eventId: string, userId: string): Promise<boolean> {
+    const result = await db.select().from(schema.eventAttendees).where(
+      and(
+        eq(schema.eventAttendees.eventId, eventId),
+        eq(schema.eventAttendees.userId, userId)
+      )
+    );
+    return result.length > 0;
   }
 
   async blockUser(userId: string, blockedUserId: string): Promise<schema.UserBlock> {

@@ -278,6 +278,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/events/:eventId/attend", async (req: Request, res: Response) => {
+    try {
+      const { eventId } = req.params;
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      
+      const attendee = await storage.addEventAttendee(eventId, userId);
+      res.json(attendee);
+    } catch (error) {
+      console.error("Attend event error:", error);
+      res.status(500).json({ error: "Failed to RSVP to event" });
+    }
+  });
+
+  app.delete("/api/events/:eventId/attend/:userId", async (req: Request, res: Response) => {
+    try {
+      const { eventId, userId } = req.params;
+      await storage.removeEventAttendee(eventId, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Remove attendance error:", error);
+      res.status(500).json({ error: "Failed to remove RSVP" });
+    }
+  });
+
+  app.get("/api/events/:eventId/attendees", async (req: Request, res: Response) => {
+    try {
+      const attendees = await storage.getEventAttendees(req.params.eventId);
+      res.json(attendees);
+    } catch (error) {
+      console.error("Get attendees error:", error);
+      res.status(500).json({ error: "Failed to get attendees" });
+    }
+  });
+
   app.post("/api/users/:userId/block", async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;

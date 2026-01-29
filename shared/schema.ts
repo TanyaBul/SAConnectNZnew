@@ -122,6 +122,19 @@ export const userReports = pgTable("user_reports", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const eventAttendees = pgTable("event_attendees", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id", { length: 36 })
+    .notNull()
+    .references(() => events.id, { onDelete: "cascade" }),
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   password: true,
@@ -172,3 +185,4 @@ export type Message = typeof messages.$inferSelect;
 export type Event = typeof events.$inferSelect;
 export type UserBlock = typeof userBlocks.$inferSelect;
 export type UserReport = typeof userReports.$inferSelect;
+export type EventAttendee = typeof eventAttendees.$inferSelect;
