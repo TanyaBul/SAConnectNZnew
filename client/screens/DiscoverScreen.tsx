@@ -95,7 +95,7 @@ export default function DiscoverScreen() {
         avatarUrl={item.avatarUrl}
         distance={item.distance || 0}
         interests={item.interests}
-        membersCount={item.familyMembers?.length || 0}
+        familyMembers={item.familyMembers || []}
         onPress={() => handleFamilyPress(item)}
         onConnect={() => handleConnect(item.id)}
         isConnected={status === "connected"}

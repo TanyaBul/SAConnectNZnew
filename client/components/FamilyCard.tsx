@@ -15,6 +15,12 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
 
+interface FamilyMember {
+  id: string;
+  name: string;
+  age: number;
+}
+
 interface FamilyCardProps {
   id: string;
   familyName: string;
@@ -22,7 +28,7 @@ interface FamilyCardProps {
   avatarUrl: string | null;
   distance: number;
   interests: string[];
-  membersCount: number;
+  familyMembers: FamilyMember[];
   onPress: () => void;
   onConnect: () => void;
   isConnected?: boolean;
@@ -37,7 +43,7 @@ export function FamilyCard({
   avatarUrl,
   distance,
   interests,
-  membersCount,
+  familyMembers = [],
   onPress,
   onConnect,
   isConnected = false,
@@ -93,7 +99,7 @@ export function FamilyCard({
             >
               {distance < 1 ? "< 1 km away" : `${distance} km away`}
             </ThemedText>
-            {membersCount > 0 ? (
+            {familyMembers.length > 0 ? (
               <>
                 <View style={[styles.dot, { backgroundColor: theme.border }]} />
                 <Feather name="users" size={14} color={theme.textSecondary} />
@@ -101,7 +107,7 @@ export function FamilyCard({
                   type="caption"
                   style={[styles.metaText, { color: theme.textSecondary }]}
                 >
-                  {membersCount} {membersCount === 1 ? "member" : "members"}
+                  {familyMembers.length} {familyMembers.length === 1 ? "member" : "members"}
                 </ThemedText>
               </>
             ) : null}
@@ -117,6 +123,19 @@ export function FamilyCard({
         >
           {bio}
         </ThemedText>
+      ) : null}
+
+      {familyMembers.length > 0 ? (
+        <View style={styles.familyMembersRow}>
+          <Feather name="users" size={14} color={theme.secondary} />
+          <ThemedText
+            type="caption"
+            style={[styles.familyMembersText, { color: theme.text }]}
+            numberOfLines={1}
+          >
+            {familyMembers.map((m) => `${m.name}${m.age > 0 ? ` (${m.age})` : ""}`).join(", ")}
+          </ThemedText>
+        </View>
       ) : null}
 
       {displayInterests.length > 0 ? (
@@ -206,6 +225,16 @@ const styles = StyleSheet.create({
   },
   bio: {
     marginTop: Spacing.md,
+  },
+  familyMembersRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: Spacing.sm,
+    paddingTop: Spacing.sm,
+  },
+  familyMembersText: {
+    marginLeft: Spacing.sm,
+    flex: 1,
   },
   interests: {
     flexDirection: "row",
