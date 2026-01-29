@@ -47,6 +47,10 @@ export interface IStorage {
   getReports(): Promise<(schema.UserReport & { reporter: schema.User; reportedUser: schema.User })[]>;
   updateReportStatus(id: string, status: string): Promise<schema.UserReport | undefined>;
   getAllBlocks(): Promise<(schema.UserBlock & { user: schema.User; blockedUser: schema.User })[]>;
+  
+  createPasswordResetToken(email: string): Promise<{ token: string; email: string } | null>;
+  verifyPasswordResetToken(email: string, token: string): Promise<boolean>;
+  resetPassword(email: string, token: string, newPassword: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -411,6 +415,70 @@ export class DatabaseStorage implements IStorage {
     );
 
     return blocksWithUsers.filter((b) => b.user && b.blockedUser);
+  }
+
+  async createPasswordResetToken(email: string): Promise<{ token: string; email: string } | null> {
+    const user = await this.getUserByEmail(email);
+    if (!user) {
+      return null;
+    }
+
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    await db.insert(schema.passwordResetTokens).values({
+      userId: user.id,
+      token,
+      expiresAt,
+    });
+
+    return { token, email };
+  }
+
+  async verifyPasswordResetToken(email: string, token: string): Promise<boolean> {
+    const user = await this.getUserByEmail(email);
+    if (!user) {
+      return false;
+    }
+
+    const [resetToken] = await db.select().from(schema.passwordResetTokens).where(
+      and(
+        eq(schema.passwordResetTokens.userId, user.id),
+        eq(schema.passwordResetTokens.token, token),
+        eq(schema.passwordResetTokens.used, false)
+      )
+    ).orderBy(desc(schema.passwordResetTokens.createdAt)).limit(1);
+
+    if (!resetToken || resetToken.expiresAt < new Date()) {
+      return false;
+    }
+
+    return true;
+  }
+
+  async resetPassword(email: string, token: string, newPassword: string): Promise<boolean> {
+    const user = await this.getUserByEmail(email);
+    if (!user) {
+      return false;
+    }
+
+    const [resetToken] = await db.select().from(schema.passwordResetTokens).where(
+      and(
+        eq(schema.passwordResetTokens.userId, user.id),
+        eq(schema.passwordResetTokens.token, token),
+        eq(schema.passwordResetTokens.used, false)
+      )
+    ).orderBy(desc(schema.passwordResetTokens.createdAt)).limit(1);
+
+    if (!resetToken || resetToken.expiresAt < new Date()) {
+      return false;
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await db.update(schema.users).set({ password: hashedPassword }).where(eq(schema.users.id, user.id));
+    await db.update(schema.passwordResetTokens).set({ used: true }).where(eq(schema.passwordResetTokens.id, resetToken.id));
+
+    return true;
   }
 }
 

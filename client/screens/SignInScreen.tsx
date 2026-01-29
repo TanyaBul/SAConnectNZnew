@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Haptics from "expo-haptics";
 
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -11,11 +13,13 @@ import { Input } from "@/components/Input";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
+import { AuthStackParamList } from "@/navigation/AuthStackNavigator";
 
 export default function SignInScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
+  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const { signIn, completeOnboarding } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -106,7 +110,9 @@ export default function SignInScreen() {
           Sign In
         </Button>
 
-        <Button variant="ghost">Forgot Password?</Button>
+        <Button variant="ghost" onPress={() => navigation.navigate("ForgotPassword")}>
+          Forgot Password?
+        </Button>
       </KeyboardAwareScrollViewCompat>
     </View>
   );

@@ -135,6 +135,19 @@ export const eventAttendees = pgTable("event_attendees", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: varchar("token", { length: 6 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   password: true,
@@ -186,3 +199,4 @@ export type Event = typeof events.$inferSelect;
 export type UserBlock = typeof userBlocks.$inferSelect;
 export type UserReport = typeof userReports.$inferSelect;
 export type EventAttendee = typeof eventAttendees.$inferSelect;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;

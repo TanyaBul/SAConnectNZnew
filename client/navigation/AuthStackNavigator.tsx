@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import WelcomeScreen from "@/screens/WelcomeScreen";
 import SignUpScreen from "@/screens/SignUpScreen";
 import SignInScreen from "@/screens/SignInScreen";
+import ForgotPasswordScreen from "@/screens/ForgotPasswordScreen";
 import CreateProfileScreen from "@/screens/CreateProfileScreen";
 import LocationPermissionScreen from "@/screens/LocationPermissionScreen";
 import PrivacyPolicyScreen from "@/screens/PrivacyPolicyScreen";
@@ -15,6 +16,7 @@ export type AuthStackParamList = {
   Welcome: undefined;
   SignUp: undefined;
   SignIn: undefined;
+  ForgotPassword: undefined;
   CreateProfile: undefined;
   LocationPermission: undefined;
   PrivacyPolicy: undefined;
@@ -43,6 +45,11 @@ export default function AuthStackNavigator() {
         name="SignIn"
         component={SignInScreen}
         options={{ headerTitle: "Sign In" }}
+      />
+      <Stack.Screen
+        name="ForgotPassword"
+        component={ForgotPasswordScreen}
+        options={{ headerTitle: "Reset Password" }}
       />
       <Stack.Screen
         name="CreateProfile"
