@@ -116,7 +116,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(transformedUser);
     } catch (error: any) {
       console.error("Sign in error:", error);
-      throw new Error("Invalid email or password");
+      const errorMessage = error.message || "";
+      if (errorMessage.includes("Invalid credentials") || errorMessage.includes("401")) {
+        throw new Error("Invalid email or password");
+      }
+      throw new Error("Unable to sign in. Please try again.");
     }
   };
 
@@ -129,8 +133,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(transformedUser);
     } catch (error: any) {
       console.error("Sign up error:", error);
-      if (error.message?.includes("already registered")) {
-        throw new Error("This email is already registered");
+      const errorMessage = error.message || "";
+      if (errorMessage.includes("already registered") || errorMessage.includes("Email already")) {
+        throw new Error("This email is already registered. Please sign in instead.");
       }
       throw new Error("Failed to create account. Please try again.");
     }

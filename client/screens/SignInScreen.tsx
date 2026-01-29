@@ -37,9 +37,10 @@ export default function SignInScreen() {
       await signIn(email, password);
       await completeOnboarding();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (err) {
+    } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setError("Invalid email or password");
+      const errorMessage = err.message || "Invalid email or password";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

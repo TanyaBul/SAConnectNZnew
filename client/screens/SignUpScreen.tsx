@@ -64,9 +64,10 @@ export default function SignUpScreen() {
       await signUp(email, password, familyName);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.navigate("CreateProfile");
-    } catch (error) {
+    } catch (error: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setErrors({ email: "Something went wrong. Please try again." });
+      const errorMessage = error.message || "Something went wrong. Please try again.";
+      setErrors({ email: errorMessage });
     } finally {
       setLoading(false);
     }
