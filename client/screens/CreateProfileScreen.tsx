@@ -141,6 +141,12 @@ export default function CreateProfileScreen() {
         >
           Optional - add names and ages (e.g., John 40)
         </ThemedText>
+        <View style={[styles.disclaimer, { backgroundColor: "#F59E0B15", borderColor: "#F59E0B" }]}>
+          <Feather name="shield" size={16} color="#F59E0B" style={styles.disclaimerIcon} />
+          <ThemedText type="small" style={{ color: theme.text, flex: 1 }}>
+            For children's safety, only first names will be visible to other families. Never share full names, school details, or other identifying information about minors.
+          </ThemedText>
+        </View>
 
         {familyMembers.map((member) => (
           <View
@@ -295,5 +301,18 @@ const styles = StyleSheet.create({
   },
   button: {
     marginBottom: Spacing.md,
+  },
+  disclaimer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  disclaimerIcon: {
+    marginRight: Spacing.sm,
+    marginTop: 2,
   },
 });
