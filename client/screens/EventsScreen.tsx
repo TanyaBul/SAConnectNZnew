@@ -3,7 +3,8 @@ import { View, StyleSheet, FlatList, RefreshControl, Pressable, Modal, ActivityI
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
@@ -17,8 +18,9 @@ import { InterestTag } from "@/components/InterestTag";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
-import { getEvents, addEvent, formatRelativeTime, Event, EVENT_CATEGORIES } from "@/lib/storage";
+import { getEvents, addEvent, getConnections, addConnection, getOrCreateThread, formatRelativeTime, Event, EVENT_CATEGORIES, Connection, Family } from "@/lib/storage";
 import { useAuth } from "@/context/AuthContext";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 let DateTimePicker: any = null;
 if (Platform.OS !== "web") {
@@ -31,8 +33,10 @@ export default function EventsScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { user } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [events, setEvents] = useState<Event[]>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -53,15 +57,19 @@ export default function EventsScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const eventsData = await getEvents();
+      const [eventsData, connectionsData] = await Promise.all([
+        getEvents(),
+        user?.id ? getConnections(user.id) : Promise.resolve([]),
+      ]);
       setEvents(eventsData);
+      setConnections(connectionsData);
     } catch (error) {
       console.error("Error loading events:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -72,6 +80,39 @@ export default function EventsScreen() {
   const handleRefresh = () => {
     setRefreshing(true);
     loadData();
+  };
+
+  const getConnectionStatus = (userId: string) => {
+    const connection = connections.find(
+      (c) => c.targetUserId === userId || c.userId === userId
+    );
+    return connection?.status;
+  };
+
+  const handleConnect = async (targetUserId: string) => {
+    if (!user?.id) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const newConnection = await addConnection(user.id, targetUserId);
+      if (newConnection) {
+        setConnections([...connections, newConnection]);
+      }
+    } catch (error) {
+      console.error("Error connecting:", error);
+    }
+  };
+
+  const handleMessage = async (eventUser: Family) => {
+    if (!user?.id || !eventUser) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      const thread = await getOrCreateThread(user.id, eventUser.id);
+      if (thread) {
+        navigation.navigate("Chat", { threadId: thread.id, family: eventUser });
+      }
+    } catch (error) {
+      console.error("Error creating thread:", error);
+    }
   };
 
   const resetForm = () => {
@@ -230,6 +271,38 @@ export default function EventsScreen() {
             {item.user?.familyName || "Your Family"}
           </ThemedText>
         </View>
+        {item.userId !== user?.id && item.user ? (
+          <View style={styles.eventActions}>
+            {getConnectionStatus(item.userId) === "connected" ? (
+              <Pressable
+                style={[styles.actionButton, { backgroundColor: theme.primary + "15" }]}
+                onPress={() => handleMessage(item.user!)}
+              >
+                <Feather name="message-circle" size={16} color={theme.primary} />
+                <ThemedText type="small" style={{ color: theme.primary, marginLeft: Spacing.xs }}>
+                  Message
+                </ThemedText>
+              </Pressable>
+            ) : getConnectionStatus(item.userId) === "pending" ? (
+              <View style={[styles.actionButton, { backgroundColor: theme.backgroundSecondary }]}>
+                <Feather name="clock" size={16} color={theme.textSecondary} />
+                <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: Spacing.xs }}>
+                  Pending
+                </ThemedText>
+              </View>
+            ) : (
+              <Pressable
+                style={[styles.actionButton, { backgroundColor: theme.primary }]}
+                onPress={() => handleConnect(item.userId)}
+              >
+                <Feather name="user-plus" size={16} color="#FFFFFF" />
+                <ThemedText type="small" style={{ color: "#FFFFFF", marginLeft: Spacing.xs }}>
+                  Connect
+                </ThemedText>
+              </Pressable>
+            )}
+          </View>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -543,6 +616,18 @@ const styles = StyleSheet.create({
   hostInfo: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
+  },
+  eventActions: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.sm,
   },
   fab: {
     position: "absolute",
