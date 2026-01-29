@@ -18,7 +18,7 @@ import { InterestTag } from "@/components/InterestTag";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
-import { getEvents, addEvent, getConnections, addConnection, getOrCreateThread, formatRelativeTime, Event, EVENT_CATEGORIES, Connection, Family } from "@/lib/storage";
+import { getEvents, addEvent, getConnections, addConnection, getOrCreateThread, attendEvent, unattendEvent, formatRelativeTime, Event, EVENT_CATEGORIES, Connection, Family } from "@/lib/storage";
 import { useAuth } from "@/context/AuthContext";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -112,6 +112,33 @@ export default function EventsScreen() {
       }
     } catch (error) {
       console.error("Error creating thread:", error);
+    }
+  };
+
+  const handleToggleAttendance = async (event: Event) => {
+    if (!user?.id) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    const isGoing = event.attendees?.includes(user.id);
+    
+    if (isGoing) {
+      const success = await unattendEvent(event.id, user.id);
+      if (success) {
+        setEvents(events.map(e => 
+          e.id === event.id 
+            ? { ...e, attendees: e.attendees.filter(id => id !== user.id), attendeeCount: e.attendeeCount - 1 }
+            : e
+        ));
+      }
+    } else {
+      const success = await attendEvent(event.id, user.id);
+      if (success) {
+        setEvents(events.map(e => 
+          e.id === event.id 
+            ? { ...e, attendees: [...(e.attendees || []), user.id], attendeeCount: (e.attendeeCount || 0) + 1 }
+            : e
+        ));
+      }
     }
   };
 
@@ -262,6 +289,40 @@ export default function EventsScreen() {
             {item.location}
           </ThemedText>
         </View>
+      </View>
+      
+      <View style={styles.attendanceRow}>
+        <View style={styles.attendeeCount}>
+          <Feather name="users" size={16} color={theme.textSecondary} />
+          <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: Spacing.sm }}>
+            {(item.attendeeCount || 0) > 0 ? `${item.attendeeCount} going` : "Be the first to join!"}
+          </ThemedText>
+        </View>
+        <Pressable
+          style={[
+            styles.goingButton,
+            item.attendees?.includes(user?.id || "") 
+              ? { backgroundColor: theme.primary }
+              : { backgroundColor: theme.backgroundSecondary, borderWidth: 1, borderColor: theme.primary }
+          ]}
+          onPress={() => handleToggleAttendance(item)}
+        >
+          <Feather 
+            name={item.attendees?.includes(user?.id || "") ? "check" : "calendar"} 
+            size={14} 
+            color={item.attendees?.includes(user?.id || "") ? "#FFFFFF" : theme.primary} 
+          />
+          <ThemedText 
+            type="small" 
+            style={{ 
+              color: item.attendees?.includes(user?.id || "") ? "#FFFFFF" : theme.primary, 
+              marginLeft: Spacing.xs,
+              fontWeight: "600"
+            }}
+          >
+            {item.attendees?.includes(user?.id || "") ? "Going" : "Will be there"}
+          </ThemedText>
+        </Pressable>
       </View>
       
       <View style={[styles.eventFooter, { borderTopColor: theme.border }]}>
@@ -628,6 +689,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.sm,
+  },
+  attendanceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+  },
+  attendeeCount: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  goingButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
   },
   fab: {
     position: "absolute",

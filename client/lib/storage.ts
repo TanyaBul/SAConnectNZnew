@@ -57,6 +57,8 @@ export interface Event {
   category: string;
   createdAt: string;
   user?: Family;
+  attendeeCount: number;
+  attendees: string[];
 }
 
 const STORAGE_KEYS = {
@@ -216,6 +218,28 @@ export async function addEvent(
   } catch (error) {
     console.error("Error adding event:", error);
     return null;
+  }
+}
+
+export async function attendEvent(eventId: string, userId: string): Promise<boolean> {
+  try {
+    const response = await apiRequest("POST", `/api/events/${eventId}/attend`, { userId });
+    return response.ok;
+  } catch (error) {
+    console.error("Error attending event:", error);
+    return false;
+  }
+}
+
+export async function unattendEvent(eventId: string, userId: string): Promise<boolean> {
+  try {
+    const response = await fetch(new URL(`/api/events/${eventId}/attend/${userId}`, getApiUrl()).toString(), {
+      method: "DELETE",
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error removing attendance:", error);
+    return false;
   }
 }
 
