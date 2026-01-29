@@ -253,7 +253,7 @@ export default function DiscoverScreen() {
       >
         <Pressable
           style={[styles.profileCard, { backgroundColor: theme.backgroundDefault, ...Shadows.card }]}
-          onPress={() => navigation.navigate("Main", { screen: "Profile" } as any)}
+          onPress={() => navigation.getParent()?.navigate("ProfileTab")}
         >
           <Avatar uri={user?.avatarUrl} size="large" />
           <View style={styles.profileInfo}>
