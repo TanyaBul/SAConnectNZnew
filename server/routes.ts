@@ -1,5 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { storage } from "./storage";
 import { loginSchema, insertUserSchema, insertEventSchema } from "@shared/schema";
 
@@ -502,6 +504,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.use("/uploads", (req, res, next) => {
+    const express = require("express");
+    express.static(path.resolve(process.cwd(), "uploads"))(req, res, next);
+  });
+
+  app.get("/api/welcome-cards", async (_req: Request, res: Response) => {
+    try {
+      const cards = await storage.getActiveWelcomeCards();
+      res.json(cards);
+    } catch (error) {
+      console.error("Get welcome cards error:", error);
+      res.status(500).json({ error: "Failed to get welcome cards" });
+    }
+  });
+
+  app.get("/api/admin/welcome-cards", async (req: Request, res: Response) => {
+    try {
+      const userEmail = req.headers["x-user-email"] as string;
+      if (userEmail !== ADMIN_EMAIL) {
+        return res.status(403).json({ error: "Unauthorised" });
+      }
+      const cards = await storage.getWelcomeCards();
+      res.json(cards);
+    } catch (error) {
+      console.error("Get admin welcome cards error:", error);
+      res.status(500).json({ error: "Failed to get welcome cards" });
+    }
+  });
+
+  app.post("/api/admin/welcome-cards", async (req: Request, res: Response) => {
+    try {
+      const userEmail = req.headers["x-user-email"] as string;
+      if (userEmail !== ADMIN_EMAIL) {
+        return res.status(403).json({ error: "Unauthorised" });
+      }
+
+      const { header, title, bullets, icon, accentColor, borderColor, promoText, imageBase64, sortOrder, active } = req.body;
+      if (!header || !title || !bullets) {
+        return res.status(400).json({ error: "Header, title, and bullets are required" });
+      }
+
+      let imageUrl: string | null = null;
+      if (imageBase64) {
+        imageUrl = saveBase64Image(imageBase64);
+      }
+
+      const card = await storage.createWelcomeCard({
+        sortOrder: sortOrder || 0,
+        icon: icon || "heart",
+        header,
+        title,
+        bullets,
+        accentColor: accentColor || "#E8703A",
+        borderColor: borderColor || "#E8703A",
+        promoText: promoText || "Watch this space for special promotions and events",
+        imageUrl,
+        active: active !== false,
+      });
+
+      res.json(card);
+    } catch (error) {
+      console.error("Create welcome card error:", error);
+      res.status(500).json({ error: "Failed to create welcome card" });
+    }
+  });
+
+  app.put("/api/admin/welcome-cards/:id", async (req: Request, res: Response) => {
+    try {
+      const userEmail = req.headers["x-user-email"] as string;
+      if (userEmail !== ADMIN_EMAIL) {
+        return res.status(403).json({ error: "Unauthorised" });
+      }
+
+      const { id } = req.params;
+      const { header, title, bullets, icon, accentColor, borderColor, promoText, imageBase64, sortOrder, active } = req.body;
+
+      const updates: any = {};
+      if (header !== undefined) updates.header = header;
+      if (title !== undefined) updates.title = title;
+      if (bullets !== undefined) updates.bullets = bullets;
+      if (icon !== undefined) updates.icon = icon;
+      if (accentColor !== undefined) updates.accentColor = accentColor;
+      if (borderColor !== undefined) updates.borderColor = borderColor;
+      if (promoText !== undefined) updates.promoText = promoText;
+      if (sortOrder !== undefined) updates.sortOrder = sortOrder;
+      if (active !== undefined) updates.active = active;
+
+      if (imageBase64) {
+        updates.imageUrl = saveBase64Image(imageBase64);
+      }
+
+      const card = await storage.updateWelcomeCard(id, updates);
+      if (!card) {
+        return res.status(404).json({ error: "Card not found" });
+      }
+
+      res.json(card);
+    } catch (error) {
+      console.error("Update welcome card error:", error);
+      res.status(500).json({ error: "Failed to update welcome card" });
+    }
+  });
+
+  app.delete("/api/admin/welcome-cards/:id", async (req: Request, res: Response) => {
+    try {
+      const userEmail = req.headers["x-user-email"] as string;
+      if (userEmail !== ADMIN_EMAIL) {
+        return res.status(403).json({ error: "Unauthorised" });
+      }
+
+      await storage.deleteWelcomeCard(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete welcome card error:", error);
+      res.status(500).json({ error: "Failed to delete welcome card" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
+}
+
+function saveBase64Image(base64String: string): string {
+  const matches = base64String.match(/^data:image\/([\w+]+);base64,(.+)$/);
+  if (!matches) {
+    throw new Error("Invalid base64 image string");
+  }
+
+  const ext = matches[1] === "jpeg" ? "jpg" : matches[1];
+  const data = matches[2];
+  const filename = `card-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+  const uploadsDir = path.resolve(process.cwd(), "uploads", "welcome-cards");
+
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
+  const filePath = path.join(uploadsDir, filename);
+  fs.writeFileSync(filePath, Buffer.from(data, "base64"));
+
+  return `/uploads/welcome-cards/${filename}`;
 }

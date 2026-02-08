@@ -51,6 +51,12 @@ export interface IStorage {
   createPasswordResetToken(email: string): Promise<{ token: string; email: string } | null>;
   verifyPasswordResetToken(email: string, token: string): Promise<boolean>;
   resetPassword(email: string, token: string, newPassword: string): Promise<boolean>;
+
+  getWelcomeCards(): Promise<schema.WelcomeCard[]>;
+  getActiveWelcomeCards(): Promise<schema.WelcomeCard[]>;
+  createWelcomeCard(data: Omit<schema.WelcomeCard, "id" | "createdAt" | "updatedAt">): Promise<schema.WelcomeCard>;
+  updateWelcomeCard(id: string, data: Partial<Omit<schema.WelcomeCard, "id" | "createdAt">>): Promise<schema.WelcomeCard | undefined>;
+  deleteWelcomeCard(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -479,6 +485,33 @@ export class DatabaseStorage implements IStorage {
     await db.update(schema.passwordResetTokens).set({ used: true }).where(eq(schema.passwordResetTokens.id, resetToken.id));
 
     return true;
+  }
+
+  async getWelcomeCards(): Promise<schema.WelcomeCard[]> {
+    return db.select().from(schema.welcomeCards).orderBy(schema.welcomeCards.sortOrder);
+  }
+
+  async getActiveWelcomeCards(): Promise<schema.WelcomeCard[]> {
+    return db.select().from(schema.welcomeCards)
+      .where(eq(schema.welcomeCards.active, true))
+      .orderBy(schema.welcomeCards.sortOrder);
+  }
+
+  async createWelcomeCard(data: Omit<schema.WelcomeCard, "id" | "createdAt" | "updatedAt">): Promise<schema.WelcomeCard> {
+    const [card] = await db.insert(schema.welcomeCards).values(data).returning();
+    return card;
+  }
+
+  async updateWelcomeCard(id: string, data: Partial<Omit<schema.WelcomeCard, "id" | "createdAt">>): Promise<schema.WelcomeCard | undefined> {
+    const [card] = await db.update(schema.welcomeCards)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.welcomeCards.id, id))
+      .returning();
+    return card;
+  }
+
+  async deleteWelcomeCard(id: string): Promise<void> {
+    await db.delete(schema.welcomeCards).where(eq(schema.welcomeCards.id, id));
   }
 }
 
