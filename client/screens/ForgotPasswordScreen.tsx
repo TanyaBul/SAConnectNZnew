@@ -30,7 +30,6 @@ export default function ForgotPasswordScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [resetToken, setResetToken] = useState("");
 
   const handleRequestCode = async () => {
     if (!email.trim()) {
@@ -53,10 +52,6 @@ export default function ForgotPasswordScreen() {
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to send reset code");
-      }
-
-      if (data.token) {
-        setResetToken(data.token);
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -178,17 +173,6 @@ export default function ForgotPasswordScreen() {
         </ThemedText>
       ) : null}
 
-      {resetToken ? (
-        <View style={[styles.tokenInfo, { backgroundColor: theme.backgroundSecondary }]}>
-          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-            Your reset code: 
-          </ThemedText>
-          <ThemedText type="body" style={[styles.tokenText, { color: theme.primary }]}>
-            {resetToken}
-          </ThemedText>
-        </View>
-      ) : null}
-
       <Button onPress={handleRequestCode} loading={loading} style={styles.button} size="large">
         Send Reset Code
       </Button>
@@ -203,17 +187,6 @@ export default function ForgotPasswordScreen() {
       <ThemedText type="body" style={[styles.subtitle, { color: theme.textSecondary }]}>
         Enter the 6-digit code sent to your email.
       </ThemedText>
-
-      {resetToken ? (
-        <View style={[styles.tokenInfo, { backgroundColor: theme.backgroundSecondary }]}>
-          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-            Your reset code: 
-          </ThemedText>
-          <ThemedText type="body" style={[styles.tokenText, { color: theme.primary }]}>
-            {resetToken}
-          </ThemedText>
-        </View>
-      ) : null}
 
       <View style={styles.form}>
         <Input

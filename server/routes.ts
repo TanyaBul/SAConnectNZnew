@@ -71,12 +71,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ success: true, message: "If an account exists with this email, you will receive a reset code." });
       }
 
-      console.log(`Password reset token for ${email}: ${result.token}`);
+      try {
+        const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
+          method: "POST",
+          headers: {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "api-key": process.env.BREVO_API_KEY || "",
+          },
+          body: JSON.stringify({
+            sender: { name: "SA Connect NZ", email: "noreply@saconnectnz.com" },
+            to: [{ email: email }],
+            subject: "Your Password Reset Code - SA Connect NZ",
+            htmlContent: `
+              <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                  <h1 style="color: #1A7F7F; margin: 0;">SA Connect NZ</h1>
+                </div>
+                <h2 style="color: #333; font-size: 20px;">Password Reset</h2>
+                <p style="color: #555; font-size: 16px; line-height: 1.5;">
+                  You requested a password reset for your SA Connect NZ account. Use the code below to reset your password:
+                </p>
+                <div style="background: #f4f4f4; border-radius: 8px; padding: 20px; text-align: center; margin: 24px 0;">
+                  <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1A7F7F;">${result.token}</span>
+                </div>
+                <p style="color: #555; font-size: 14px; line-height: 1.5;">
+                  This code will expire in 15 minutes. If you did not request this reset, please ignore this email.
+                </p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+                <p style="color: #999; font-size: 12px; text-align: center;">
+                  SA Connect NZ &mdash; Connecting South African families in New Zealand
+                </p>
+              </div>
+            `,
+          }),
+        });
+
+        if (!brevoResponse.ok) {
+          const errBody = await brevoResponse.text();
+          console.error("Brevo email error:", errBody);
+        }
+      } catch (emailError) {
+        console.error("Failed to send reset email:", emailError);
+      }
       
       res.json({ 
         success: true, 
-        message: "If an account exists with this email, you will receive a reset code.",
-        token: result.token
+        message: "If an account exists with this email, you will receive a reset code."
       });
     } catch (error) {
       console.error("Forgot password error:", error);
