@@ -13,7 +13,6 @@ import TermsOfServiceScreen from "@/screens/TermsOfServiceScreen";
 import HelpFAQScreen from "@/screens/HelpFAQScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
 import AdminScreen from "@/screens/AdminScreen";
-import { WelcomeCards } from "@/components/WelcomeCards";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -37,7 +36,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
-  const { user, isLoading, isOnboarded, showWelcomeCards, dismissWelcomeCards } = useAuth();
+  const { user, isLoading, isOnboarded } = useAuth();
   const { theme } = useTheme();
 
   if (isLoading) {
@@ -49,14 +48,13 @@ export default function RootStackNavigator() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <Stack.Navigator screenOptions={screenOptions}>
-        {!user || !isOnboarded ? (
-          <Stack.Screen
-            name="Auth"
-            component={AuthStackNavigator}
-            options={{ headerShown: false }}
-          />
+    <Stack.Navigator screenOptions={screenOptions}>
+      {!user || !isOnboarded ? (
+        <Stack.Screen
+          name="Auth"
+          component={AuthStackNavigator}
+          options={{ headerShown: false }}
+        />
         ) : (
           <>
             <Stack.Screen
@@ -128,13 +126,9 @@ export default function RootStackNavigator() {
               headerTitle: "Admin Dashboard",
             }}
           />
-        </>
-      )}
-    </Stack.Navigator>
-    {showWelcomeCards && user && isOnboarded ? (
-      <WelcomeCards onComplete={dismissWelcomeCards} />
-    ) : null}
-    </View>
+      </>
+    )}
+  </Stack.Navigator>
   );
 }
 

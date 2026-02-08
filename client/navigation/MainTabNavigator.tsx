@@ -2,13 +2,15 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { Platform, StyleSheet } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
 import DiscoverStackNavigator from "@/navigation/DiscoverStackNavigator";
 import MessagesStackNavigator from "@/navigation/MessagesStackNavigator";
 import EventsStackNavigator from "@/navigation/EventsStackNavigator";
 import ProfileStackNavigator from "@/navigation/ProfileStackNavigator";
+import { WelcomeCards } from "@/components/WelcomeCards";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/context/AuthContext";
 
 export type MainTabParamList = {
   DiscoverTab: undefined;
@@ -21,8 +23,10 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function MainTabNavigator() {
   const { theme, isDark } = useTheme();
+  const { showWelcomeCards, dismissWelcomeCards } = useAuth();
 
   return (
+    <View style={{ flex: 1 }}>
     <Tab.Navigator
       initialRouteName="DiscoverTab"
       screenOptions={{
@@ -89,5 +93,9 @@ export default function MainTabNavigator() {
         }}
       />
     </Tab.Navigator>
+    {showWelcomeCards ? (
+      <WelcomeCards onComplete={dismissWelcomeCards} />
+    ) : null}
+    </View>
   );
 }
