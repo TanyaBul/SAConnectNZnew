@@ -77,7 +77,8 @@ assets/images/              # Generated app assets
 2. **Discover Tab**: Find families nearby with distance, interests, and connect
 3. **Messages Tab**: Chat with connected families
 4. **Events Tab**: Create and browse community events (braais, playdates, sports, etc.)
-5. **Profile Tab**: View/edit family profile, kids, interests
+5. **Business Hub Tab**: Free business listings for SA families (Food & Baking, Beauty & Wellness, Home Services, etc.)
+6. **Profile Tab**: View/edit family profile, kids, interests
 
 ## Running the App
 - **Backend**: `npm run server:dev` (port 5000)
@@ -95,6 +96,15 @@ Full PostgreSQL database integration with Drizzle ORM:
 All data persists server-side - no more demo/sample data.
 
 ## Recent Changes
+- Added Business Hub feature
+  - Free business listings for SA families in NZ
+  - Categories: Food & Baking, Beauty & Wellness, Home Services, Health & Fitness, Education & Tutoring, Childcare, Events & Entertainment, Arts & Crafts, Professional Services, Retail, Transport, Other
+  - Expandable business cards with contact details (phone, email, website)
+  - Logo upload support (base64 to /uploads/business-logos/)
+  - Integrated with connections/messaging system
+  - Database table: businesses
+  - API endpoints: GET/POST /api/businesses, PUT/DELETE /api/businesses/:id
+  - Terms of Service updated with Business Hub disclaimer (section 9)
 - Added Forgot Password functionality
   - 6-digit reset code system with 15-minute expiry
   - Multi-step flow: email → code verification → new password → success
