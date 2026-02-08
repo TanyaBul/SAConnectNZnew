@@ -509,6 +509,18 @@ export default function EventsScreen() {
         data={events}
         keyExtractor={(item) => item.id}
         renderItem={renderEvent}
+        ListHeaderComponent={
+          <Pressable
+            style={[styles.pinnedBanner, { backgroundColor: theme.primary + "12", borderColor: theme.primary + "30" }]}
+            onPress={() => setModalVisible(true)}
+          >
+            <Feather name="calendar" size={18} color={theme.primary} />
+            <ThemedText type="small" style={{ color: theme.primary, fontWeight: "600", flex: 1, marginLeft: Spacing.sm }}>
+              List your event for free to the SA community!
+            </ThemedText>
+            <Feather name="chevron-right" size={16} color={theme.primary} />
+          </Pressable>
+        }
         contentContainerStyle={[
           styles.listContent,
           {
@@ -643,6 +655,15 @@ const styles = StyleSheet.create({
   },
   emptyList: {
     flex: 1,
+  },
+  pinnedBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginBottom: Spacing.lg,
   },
   eventCard: {
     borderRadius: BorderRadius.md,

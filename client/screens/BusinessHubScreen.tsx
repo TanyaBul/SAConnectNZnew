@@ -346,6 +346,18 @@ export default function BusinessHubScreen() {
         data={businesses}
         keyExtractor={(item) => item.id}
         renderItem={renderBusiness}
+        ListHeaderComponent={
+          <Pressable
+            style={[styles.pinnedBanner, { backgroundColor: theme.primary + "12", borderColor: theme.primary + "30" }]}
+            onPress={() => setModalVisible(true)}
+          >
+            <Feather name="briefcase" size={18} color={theme.primary} />
+            <ThemedText type="small" style={{ color: theme.primary, fontWeight: "600", flex: 1, marginLeft: Spacing.sm }}>
+              List your business for free to the SA community!
+            </ThemedText>
+            <Feather name="chevron-right" size={16} color={theme.primary} />
+          </Pressable>
+        }
         contentContainerStyle={[
           styles.listContent,
           {
@@ -514,6 +526,15 @@ const styles = StyleSheet.create({
   },
   emptyList: {
     flex: 1,
+  },
+  pinnedBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginBottom: Spacing.lg,
   },
   bizCard: {
     borderRadius: BorderRadius.md,
