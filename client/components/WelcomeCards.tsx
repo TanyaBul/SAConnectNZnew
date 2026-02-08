@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, StyleSheet, Dimensions, Pressable } from "react-native";
+import { View, StyleSheet, Dimensions, Pressable, Image } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -17,39 +17,58 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
+const logoImage = require("../../assets/images/icon.png");
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-const CARD_WIDTH = SCREEN_WIDTH - 32;
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.7;
+const CARD_WIDTH = SCREEN_WIDTH - 40;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.65;
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.2;
 
 interface WelcomeCardData {
   icon: keyof typeof Feather.glyphMap;
+  header: string;
   title: string;
-  description: string;
-  color: string;
+  bullets: string[];
+  accentColor: string;
+  borderColor: string;
 }
 
 const CARDS: WelcomeCardData[] = [
   {
-    icon: "compass",
-    title: "Discover SA Families",
-    description:
-      "Find other South African families living near you in New Zealand. Connect over shared interests and life stages.",
-    color: "#E8703A",
+    icon: "heart",
+    header: "Welcome Back",
+    title: "Connect with Families",
+    bullets: [
+      "Meet fellow SA neighbours in your area",
+      "Find events or start local gatherings",
+      "Build your community in New Zealand",
+    ],
+    accentColor: "#E8703A",
+    borderColor: "#E8703A",
   },
   {
     icon: "calendar",
+    header: "Get Together",
     title: "Join Community Events",
-    description:
-      "Braais, playdates, rugby watch parties, and more. Browse and RSVP to events created by families in your area.",
-    color: "#1A7F7F",
+    bullets: [
+      "Braais, playdates & rugby watch parties",
+      "RSVP and see who's attending",
+      "Create your own events for everyone",
+    ],
+    accentColor: "#1A7F7F",
+    borderColor: "#1A7F7F",
   },
   {
     icon: "message-circle",
-    title: "Stay Connected",
-    description:
-      "Send connection requests and chat privately with families you click with. Build your SA community in NZ!",
-    color: "#F5A623",
+    header: "Stay in Touch",
+    title: "Chat & Connect",
+    bullets: [
+      "Send connection requests to families",
+      "Chat privately once connected",
+      "Share tips, advice & lekker stories",
+    ],
+    accentColor: "#F5A623",
+    borderColor: "#F5A623",
   },
 ];
 
@@ -64,8 +83,8 @@ interface SwipeableCardProps {
 function SwipeableCard({ card, onDismiss, isTop, index, totalRemaining }: SwipeableCardProps) {
   const { theme } = useTheme();
   const translateX = useSharedValue(0);
-  const rotate = useSharedValue(0);
-  const opacity = useSharedValue(1);
+  const rotateZ = useSharedValue(0);
+  const cardOpacity = useSharedValue(1);
 
   const stackOffset = Math.min(index, 2);
 
@@ -77,10 +96,10 @@ function SwipeableCard({ card, onDismiss, isTop, index, totalRemaining }: Swipea
     .enabled(isTop)
     .onUpdate((event) => {
       translateX.value = event.translationX;
-      rotate.value = interpolate(
+      rotateZ.value = interpolate(
         event.translationX,
         [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
-        [-12, 0, 12],
+        [-10, 0, 10],
         Extrapolation.CLAMP
       );
     })
@@ -88,36 +107,39 @@ function SwipeableCard({ card, onDismiss, isTop, index, totalRemaining }: Swipea
       if (Math.abs(event.translationX) > SWIPE_THRESHOLD) {
         const direction = event.translationX > 0 ? 1 : -1;
         translateX.value = withTiming(direction * SCREEN_WIDTH * 1.5, { duration: 300 });
-        rotate.value = withTiming(direction * 25, { duration: 300 });
-        opacity.value = withTiming(0, { duration: 250 }, () => {
+        rotateZ.value = withTiming(direction * 20, { duration: 300 });
+        cardOpacity.value = withTiming(0, { duration: 250 }, () => {
           runOnJS(dismiss)();
         });
       } else {
         translateX.value = withSpring(0, { damping: 15, stiffness: 200 });
-        rotate.value = withSpring(0, { damping: 15, stiffness: 200 });
+        rotateZ.value = withSpring(0, { damping: 15, stiffness: 200 });
       }
     });
+
+  const STACK_ROTATIONS = [-3, 2.5];
 
   const animatedCardStyle = useAnimatedStyle(() => {
     if (isTop) {
       return {
         transform: [
           { translateX: translateX.value },
-          { rotate: `${rotate.value}deg` },
+          { rotate: `${rotateZ.value}deg` },
           { scale: 1 },
           { translateY: 0 },
         ],
-        opacity: opacity.value,
+        opacity: cardOpacity.value,
       };
     }
+    const rot = stackOffset <= STACK_ROTATIONS.length ? STACK_ROTATIONS[stackOffset - 1] : 0;
     return {
       transform: [
         { translateX: 0 },
-        { rotate: "0deg" },
-        { scale: 1 - stackOffset * 0.04 },
-        { translateY: stackOffset * 12 },
+        { rotate: `${rot}deg` },
+        { scale: 1 - stackOffset * 0.03 },
+        { translateY: stackOffset * -6 },
       ],
-      opacity: 1 - stackOffset * 0.12,
+      opacity: 1,
     };
   });
 
@@ -128,29 +150,76 @@ function SwipeableCard({ card, onDismiss, isTop, index, totalRemaining }: Swipea
           styles.card,
           {
             backgroundColor: theme.backgroundDefault,
+            borderColor: card.borderColor + "50",
             zIndex: totalRemaining - index,
           },
           animatedCardStyle,
         ]}
       >
-        <View style={styles.cardInner}>
-          <View style={[styles.iconCircle, { backgroundColor: card.color + "18" }]}>
-            <Feather name={card.icon} size={48} color={card.color} />
+        <Image
+          source={logoImage}
+          style={styles.watermarkLogo}
+          resizeMode="contain"
+        />
+
+        <View style={styles.cardContent}>
+          <View style={[styles.headerBadge, { backgroundColor: card.accentColor + "15" }]}>
+            <Feather name={card.icon} size={18} color={card.accentColor} />
+            <ThemedText type="caption" style={{ color: card.accentColor, fontWeight: "600" }}>
+              {card.header}
+            </ThemedText>
           </View>
-          <ThemedText type="h2" style={styles.cardTitle}>
+
+          <ThemedText type="h2" style={[styles.cardTitle, { color: theme.text }]}>
             {card.title}
           </ThemedText>
-          <ThemedText type="body" style={[styles.cardDescription, { color: theme.textSecondary }]}>
-            {card.description}
-          </ThemedText>
+
+          <View style={styles.bulletList}>
+            {card.bullets.map((bullet) => (
+              <View key={bullet} style={styles.bulletRow}>
+                <View style={[styles.bulletDot, { backgroundColor: card.accentColor }]} />
+                <ThemedText type="body" style={[styles.bulletText, { color: theme.textSecondary }]}>
+                  {bullet}
+                </ThemedText>
+              </View>
+            ))}
+          </View>
         </View>
+
         {isTop ? (
-          <View style={styles.swipeHint}>
-            <Feather name="chevrons-left" size={18} color={theme.textSecondary} />
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-              Swipe to continue
-            </ThemedText>
-            <Feather name="chevrons-right" size={18} color={theme.textSecondary} />
+          <View style={styles.swipeButtonContainer}>
+            <Pressable
+              style={[styles.swipeButton, { backgroundColor: card.accentColor + "15", borderColor: card.accentColor + "30" }]}
+              onPress={() => {
+                translateX.value = withTiming(-SCREEN_WIDTH * 1.5, { duration: 300 });
+                rotateZ.value = withTiming(-20, { duration: 300 });
+                cardOpacity.value = withTiming(0, { duration: 250 }, () => {
+                  runOnJS(dismiss)();
+                });
+              }}
+            >
+              <Feather name="chevron-left" size={22} color={card.accentColor} />
+            </Pressable>
+
+            <View style={styles.swipeLabelContainer}>
+              <Feather name="more-horizontal" size={20} color={theme.textSecondary} />
+              <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                Swipe or tap
+              </ThemedText>
+            </View>
+
+            <Pressable
+              style={[styles.swipeButton, { backgroundColor: card.accentColor + "15", borderColor: card.accentColor + "30" }]}
+              onPress={() => {
+                translateX.value = withTiming(SCREEN_WIDTH * 1.5, { duration: 300 });
+                rotateZ.value = withTiming(20, { duration: 300 });
+                cardOpacity.value = withTiming(0, { duration: 250 }, () => {
+                  runOnJS(dismiss)();
+                });
+              }}
+            >
+              <Feather name="chevron-right" size={22} color={card.accentColor} />
+            </Pressable>
           </View>
         ) : null}
       </Animated.View>
@@ -163,7 +232,6 @@ interface WelcomeCardsProps {
 }
 
 export function WelcomeCards({ onComplete }: WelcomeCardsProps) {
-  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [dismissedCount, setDismissedCount] = useState(0);
 
@@ -187,10 +255,25 @@ export function WelcomeCards({ onComplete }: WelcomeCardsProps) {
     <View style={[styles.overlay, { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing.lg }]}>
       <Pressable style={styles.backdrop} onPress={() => {}} />
 
-      <View style={styles.counter}>
-        <ThemedText type="body" style={{ color: "rgba(255,255,255,0.9)", fontWeight: "600" }}>
-          {dismissedCount + 1} of {CARDS.length}
-        </ThemedText>
+      <View style={styles.topRow}>
+        <View style={styles.dots}>
+          {CARDS.map((c, i) => (
+            <View
+              key={c.title}
+              style={[
+                styles.dot,
+                {
+                  backgroundColor: i < dismissedCount
+                    ? "rgba(255,255,255,0.3)"
+                    : i === dismissedCount
+                    ? "#FFFFFF"
+                    : "rgba(255,255,255,0.5)",
+                  width: i === dismissedCount ? 24 : 8,
+                },
+              ]}
+            />
+          ))}
+        </View>
       </View>
 
       <View style={styles.cardContainer}>
@@ -215,8 +298,8 @@ export function WelcomeCards({ onComplete }: WelcomeCardsProps) {
       </View>
 
       <Pressable style={styles.skipButton} onPress={onComplete} testID="button-skip-cards">
-        <ThemedText type="body" style={{ color: "rgba(255,255,255,0.8)", fontWeight: "600" }}>
-          Skip all
+        <ThemedText type="caption" style={{ color: "rgba(255,255,255,0.7)" }}>
+          Skip
         </ThemedText>
       </Pressable>
     </View>
@@ -229,17 +312,27 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.55)",
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
   },
-  counter: {
+  topRow: {
     marginBottom: Spacing.lg,
+    alignItems: "center",
+  },
+  dots: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  dot: {
+    height: 8,
+    borderRadius: 4,
   },
   cardContainer: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
+    width: CARD_WIDTH + 20,
+    height: CARD_HEIGHT + 20,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -247,44 +340,80 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    borderRadius: BorderRadius["2xl"],
-    padding: Spacing["3xl"],
+    borderRadius: BorderRadius.xl,
+    borderWidth: 2,
+    overflow: "hidden",
     justifyContent: "space-between",
-    alignItems: "center",
   },
-  cardInner: {
+  watermarkLogo: {
+    position: "absolute",
+    width: 220,
+    height: 220,
+    opacity: 0.04,
+    right: -30,
+    bottom: 40,
+  },
+  cardContent: {
     flex: 1,
+    paddingTop: Spacing["4xl"],
+    paddingHorizontal: Spacing["2xl"],
     justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: Spacing.lg,
   },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing["3xl"],
-  },
-  cardTitle: {
-    textAlign: "center",
-    marginBottom: Spacing.xl,
-  },
-  cardDescription: {
-    textAlign: "center",
-    lineHeight: 26,
-    fontSize: 17,
-  },
-  swipeHint: {
+  headerBadge: {
     flexDirection: "row",
     alignItems: "center",
+    alignSelf: "flex-start",
     gap: Spacing.sm,
-    paddingBottom: Spacing.md,
-    opacity: 0.6,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    marginBottom: Spacing.xl,
+  },
+  cardTitle: {
+    marginBottom: Spacing["2xl"],
+  },
+  bulletList: {
+    gap: Spacing.lg,
+  },
+  bulletRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.md,
+  },
+  bulletDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 8,
+  },
+  bulletText: {
+    flex: 1,
+    lineHeight: 24,
+    fontSize: 16,
+  },
+  swipeButtonContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing["2xl"],
+    paddingBottom: Spacing["2xl"],
+    gap: Spacing.xl,
+  },
+  swipeButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1.5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  swipeLabelContainer: {
+    alignItems: "center",
+    gap: 2,
   },
   skipButton: {
-    marginTop: Spacing.xl,
-    paddingVertical: Spacing.md,
+    marginTop: Spacing.lg,
+    paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing["3xl"],
   },
 });
