@@ -177,6 +177,8 @@ function configureExpoAndLanding(app: express.Application) {
   const privacyHtml = fs.readFileSync(privacyPath, "utf-8");
   const tosPath = path.resolve(process.cwd(), "server", "templates", "terms-of-service.html");
   const tosHtml = fs.readFileSync(tosPath, "utf-8");
+  const supportPath = path.resolve(process.cwd(), "server", "templates", "support.html");
+  const supportHtml = fs.readFileSync(supportPath, "utf-8");
 
   app.get("/privacy-policy", (_req: Request, res: Response) => {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -186,6 +188,11 @@ function configureExpoAndLanding(app: express.Application) {
   app.get("/terms-of-service", (_req: Request, res: Response) => {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.status(200).send(tosHtml);
+  });
+
+  app.get("/support", (_req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.status(200).send(supportHtml);
   });
 
   app.use((req: Request, res: Response, next: NextFunction) => {
