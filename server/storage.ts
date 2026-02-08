@@ -118,9 +118,10 @@ export class DatabaseStorage implements IStorage {
     
     const allBlockedIds = [...new Set([...blockedUserIds, ...blockedByIds])];
     
+    const ADMIN_EMAIL = "saconnectnz@gmail.com";
     const allUsers = await db.select().from(schema.users).where(ne(schema.users.id, userId));
     
-    const filteredUsers = allUsers.filter((user) => !allBlockedIds.includes(user.id));
+    const filteredUsers = allUsers.filter((user) => !allBlockedIds.includes(user.id) && user.email !== ADMIN_EMAIL);
     
     const usersWithMembers = await Promise.all(
       filteredUsers.map(async (user) => {
