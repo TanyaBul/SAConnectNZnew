@@ -178,6 +178,20 @@ function configureExpoAndLanding(app: express.Application) {
       return next();
     }
 
+    if (req.path === "/privacy-policy") {
+      const ppPath = path.resolve(process.cwd(), "server", "templates", "privacy-policy.html");
+      const ppHtml = fs.readFileSync(ppPath, "utf-8");
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      return res.status(200).send(ppHtml);
+    }
+
+    if (req.path === "/terms-of-service") {
+      const tosPath = path.resolve(process.cwd(), "server", "templates", "terms-of-service.html");
+      const tosHtml = fs.readFileSync(tosPath, "utf-8");
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      return res.status(200).send(tosHtml);
+    }
+
     if (req.path !== "/" && req.path !== "/manifest") {
       return next();
     }
