@@ -13,6 +13,7 @@ import TermsOfServiceScreen from "@/screens/TermsOfServiceScreen";
 import HelpFAQScreen from "@/screens/HelpFAQScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
 import AdminScreen from "@/screens/AdminScreen";
+import { WelcomeCards } from "@/components/WelcomeCards";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -36,7 +37,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
-  const { user, isLoading, isOnboarded } = useAuth();
+  const { user, isLoading, isOnboarded, showWelcomeCards, dismissWelcomeCards } = useAuth();
   const { theme } = useTheme();
 
   if (isLoading) {
@@ -48,20 +49,21 @@ export default function RootStackNavigator() {
   }
 
   return (
-    <Stack.Navigator screenOptions={screenOptions}>
-      {!user || !isOnboarded ? (
-        <Stack.Screen
-          name="Auth"
-          component={AuthStackNavigator}
-          options={{ headerShown: false }}
-        />
-      ) : (
-        <>
+    <View style={{ flex: 1 }}>
+      <Stack.Navigator screenOptions={screenOptions}>
+        {!user || !isOnboarded ? (
           <Stack.Screen
-            name="Main"
-            component={MainTabNavigator}
+            name="Auth"
+            component={AuthStackNavigator}
             options={{ headerShown: false }}
           />
+        ) : (
+          <>
+            <Stack.Screen
+              name="Main"
+              component={MainTabNavigator}
+              options={{ headerShown: false }}
+            />
           <Stack.Screen
             name="FamilyDetail"
             component={FamilyDetailScreen}
@@ -129,6 +131,10 @@ export default function RootStackNavigator() {
         </>
       )}
     </Stack.Navigator>
+    {showWelcomeCards && user && isOnboarded ? (
+      <WelcomeCards onComplete={dismissWelcomeCards} />
+    ) : null}
+    </View>
   );
 }
 

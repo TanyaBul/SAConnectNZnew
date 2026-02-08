@@ -32,12 +32,14 @@ interface AuthContextType {
   user: UserProfile | null;
   isLoading: boolean;
   isOnboarded: boolean;
+  showWelcomeCards: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, familyName: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   completeOnboarding: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  dismissWelcomeCards: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -71,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOnboarded, setIsOnboarded] = useState(false);
+  const [showWelcomeCards, setShowWelcomeCards] = useState(false);
 
   useEffect(() => {
     loadStoredData();
@@ -114,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const transformedUser = transformDbUserToProfile(data.user);
       await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(transformedUser));
       setUser(transformedUser);
+      setShowWelcomeCards(true);
     } catch (error: any) {
       console.error("Sign in error:", error);
       const errorMessage = error.message || "";
@@ -197,6 +201,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const completeOnboarding = async () => {
     await AsyncStorage.setItem(STORAGE_KEYS.ONBOARDED, "true");
     setIsOnboarded(true);
+    setShowWelcomeCards(true);
+  };
+
+  const dismissWelcomeCards = () => {
+    setShowWelcomeCards(false);
   };
 
   return (
@@ -205,12 +214,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isLoading,
         isOnboarded,
+        showWelcomeCards,
         signIn,
         signUp,
         signOut,
         updateProfile,
         completeOnboarding,
         refreshUser,
+        dismissWelcomeCards,
       }}
     >
       {children}
