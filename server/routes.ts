@@ -217,7 +217,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/connections/:userId", async (req: Request, res: Response) => {
     try {
       const connections = await storage.getConnections(req.params.userId);
-      res.json(connections);
+      const enriched = await Promise.all(
+        connections.map(async (c) => {
+          const otherUserId = c.userId === req.params.userId ? c.targetUserId : c.userId;
+          const otherUser = await storage.getUserById(otherUserId);
+          return {
+            ...c,
+            otherUser: otherUser ? sanitizeUser(otherUser) : null,
+          };
+        })
+      );
+      res.json(enriched);
     } catch (error) {
       console.error("Get connections error:", error);
       res.status(500).json({ error: "Failed to get connections" });

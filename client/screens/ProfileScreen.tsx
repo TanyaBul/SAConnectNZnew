@@ -1,11 +1,12 @@
-import React from "react";
-import { View, StyleSheet, ScrollView, Pressable } from "react-native";
+import React, { useState, useCallback } from "react";
+import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Avatar } from "@/components/Avatar";
@@ -15,6 +16,19 @@ import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { getConnections, getOrCreateThread } from "@/lib/storage";
+
+interface EnrichedConnection {
+  id: string;
+  userId: string;
+  targetUserId: string;
+  status: string;
+  otherUser: {
+    id: string;
+    familyName: string;
+    avatarUrl: string | null;
+  } | null;
+}
 
 export default function ProfileScreen() {
   const { theme } = useTheme();
@@ -23,6 +37,37 @@ export default function ProfileScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
+  const [connections, setConnections] = useState<EnrichedConnection[]>([]);
+  const [loadingConnections, setLoadingConnections] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        setLoadingConnections(true);
+        getConnections(user.id)
+          .then((data) => {
+            setConnections(data.filter((c: any) => c.status === "connected" && c.otherUser));
+          })
+          .finally(() => setLoadingConnections(false));
+      }
+    }, [user?.id])
+  );
+
+  const handleMessageConnection = async (otherUser: EnrichedConnection["otherUser"]) => {
+    if (!user?.id || !otherUser) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const thread = await getOrCreateThread(user.id, otherUser.id);
+      if (thread) {
+        navigation.navigate("Chat", {
+          threadId: thread.id,
+          family: { id: otherUser.id, familyName: otherUser.familyName, avatarUrl: otherUser.avatarUrl } as any,
+        });
+      }
+    } catch (error) {
+      console.error("Error starting message:", error);
+    }
+  };
 
   if (!user) {
     return (
@@ -132,6 +177,64 @@ export default function ProfileScreen() {
           </View>
         ) : null}
 
+        <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
+          <View style={styles.sectionHeader}>
+            <ThemedText type="heading" style={styles.sectionTitle}>
+              My Connections
+            </ThemedText>
+            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+              {connections.length} {connections.length === 1 ? "family" : "families"}
+            </ThemedText>
+          </View>
+          {loadingConnections ? (
+            <ActivityIndicator size="small" color={theme.primary} style={{ paddingVertical: Spacing.lg }} />
+          ) : connections.length > 0 ? (
+            <View style={styles.connectionsGrid}>
+              {connections.map((conn) => {
+                if (!conn.otherUser) return null;
+                return (
+                  <View
+                    key={conn.id}
+                    style={[styles.connectionCard, { backgroundColor: theme.backgroundSecondary }]}
+                  >
+                    <Pressable
+                      style={styles.connectionInfo}
+                      onPress={() =>
+                        navigation.navigate("FamilyDetail", {
+                          family: {
+                            id: conn.otherUser!.id,
+                            familyName: conn.otherUser!.familyName,
+                            avatarUrl: conn.otherUser!.avatarUrl,
+                          } as any,
+                        })
+                      }
+                    >
+                      <Avatar uri={conn.otherUser.avatarUrl} size="medium" />
+                      <ThemedText type="body" style={styles.connectionName} numberOfLines={1}>
+                        {conn.otherUser.familyName}
+                      </ThemedText>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.messageIcon, { backgroundColor: theme.primary + "15" }]}
+                      onPress={() => handleMessageConnection(conn.otherUser)}
+                      testID={`button-message-${conn.otherUser.id}`}
+                    >
+                      <Feather name="message-circle" size={20} color={theme.primary} />
+                    </Pressable>
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            <View style={styles.emptyConnections}>
+              <Feather name="users" size={32} color={theme.textSecondary + "60"} />
+              <ThemedText type="small" style={{ color: theme.textSecondary, textAlign: "center", marginTop: Spacing.sm }}>
+                No connections yet. Discover SA families nearby!
+              </ThemedText>
+            </View>
+          )}
+        </View>
+
         <Button
           onPress={() => navigation.navigate("EditProfile")}
           variant="outline"
@@ -219,6 +322,44 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.sm,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  connectionsGrid: {
+    gap: Spacing.sm,
+  },
+  connectionCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.sm,
+  },
+  connectionInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  connectionName: {
+    fontWeight: "500",
+    marginLeft: Spacing.md,
+    flex: 1,
+  },
+  messageIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyConnections: {
+    alignItems: "center",
+    paddingVertical: Spacing.xl,
   },
   editButton: {
     marginTop: Spacing.lg,
