@@ -28,6 +28,7 @@ export default function EditProfileScreen() {
   const [familyName, setFamilyName] = useState(user?.familyName || "");
   const [bio, setBio] = useState(user?.bio || "");
   const [avatarUri, setAvatarUri] = useState<string | null>(user?.avatarUrl || null);
+  const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(user?.familyMembers || []);
   const [selectedInterests, setSelectedInterests] = useState<string[]>(
     user?.interests || []
@@ -54,6 +55,7 @@ export default function EditProfileScreen() {
         if (result) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           setAvatarUri(result.uri);
+          setAvatarBase64(result.base64 || null);
         }
       },
       async () => {
@@ -61,6 +63,7 @@ export default function EditProfileScreen() {
         if (result) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           setAvatarUri(result.uri);
+          setAvatarBase64(result.base64 || null);
         }
       }
     );
@@ -97,7 +100,7 @@ export default function EditProfileScreen() {
       await updateProfile({
         familyName,
         bio,
-        avatarUrl: avatarUri || undefined,
+        avatarUrl: avatarBase64 || avatarUri || undefined,
         familyMembers: familyMembers.filter((m) => m.name.trim()),
         interests: selectedInterests,
       });

@@ -140,7 +140,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/users/:id", async (req: Request, res: Response) => {
     try {
-      const user = await storage.updateUser(req.params.id, req.body);
+      const updates = { ...req.body };
+      if (updates.avatarUrl && updates.avatarUrl.startsWith("data:image")) {
+        updates.avatarUrl = saveBase64Image(updates.avatarUrl, "avatars");
+      }
+      const user = await storage.updateUser(req.params.id, updates);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -726,7 +730,8 @@ function saveBase64Image(base64String: string, subDir: string = "welcome-cards")
 
   const ext = matches[1] === "jpeg" ? "jpg" : matches[1];
   const data = matches[2];
-  const prefix = subDir === "welcome-cards" ? "card" : "biz";
+  const prefixMap: Record<string, string> = { "welcome-cards": "card", "business-logos": "biz", "avatars": "avatar" };
+  const prefix = prefixMap[subDir] || "img";
   const filename = `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
   const uploadsDir = path.resolve(process.cwd(), "uploads", subDir);
 

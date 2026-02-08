@@ -10,6 +10,22 @@ import Animated, {
 
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius } from "@/constants/theme";
+import { getApiUrl } from "@/lib/query-client";
+
+function resolveAvatarUri(uri: string | null | undefined): string | null {
+  if (!uri) return null;
+  if (uri.startsWith("http") || uri.startsWith("file://") || uri.startsWith("data:")) {
+    return uri;
+  }
+  if (uri.startsWith("/uploads/")) {
+    try {
+      return new URL(uri, getApiUrl()).toString();
+    } catch {
+      return uri;
+    }
+  }
+  return uri;
+}
 
 interface AvatarProps {
   uri?: string | null;
@@ -48,6 +64,8 @@ export function Avatar({ uri, size = "medium", onPress, showEditBadge }: AvatarP
     }
   };
 
+  const resolvedUri = resolveAvatarUri(uri);
+
   const content = (
     <View
       style={[
@@ -61,9 +79,9 @@ export function Avatar({ uri, size = "medium", onPress, showEditBadge }: AvatarP
         },
       ]}
     >
-      {uri ? (
+      {resolvedUri ? (
         <Image
-          source={{ uri }}
+          source={{ uri: resolvedUri }}
           style={[
             styles.image,
             {

@@ -29,6 +29,7 @@ export default function CreateProfileScreen() {
 
   const [bio, setBio] = useState(user?.bio || "");
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(user?.familyMembers || []);
   const [selectedInterests, setSelectedInterests] = useState<string[]>(
     user?.interests || []
@@ -55,6 +56,7 @@ export default function CreateProfileScreen() {
         if (result) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           setAvatarUri(result.uri);
+          setAvatarBase64(result.base64 || null);
         }
       },
       async () => {
@@ -62,6 +64,7 @@ export default function CreateProfileScreen() {
         if (result) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           setAvatarUri(result.uri);
+          setAvatarBase64(result.base64 || null);
         }
       }
     );
@@ -97,7 +100,7 @@ export default function CreateProfileScreen() {
     try {
       await updateProfile({
         bio,
-        avatarUrl: avatarUri || undefined,
+        avatarUrl: avatarBase64 || avatarUri || undefined,
         familyMembers: familyMembers.filter((m) => m.name.trim()),
         interests: selectedInterests,
       });
