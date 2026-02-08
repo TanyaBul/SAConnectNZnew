@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, Pressable, Modal, ActivityIndicator, Platform, TextInput as RNTextInput } from "react-native";
+import { View, StyleSheet, FlatList, RefreshControl, Pressable, Modal, ActivityIndicator, Platform, TextInput as RNTextInput, ScrollView, KeyboardAvoidingView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -15,7 +15,6 @@ import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { InterestTag } from "@/components/InterestTag";
-import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
 import { getEvents, addEvent, getConnections, addConnection, getOrCreateThread, attendEvent, unattendEvent, formatRelativeTime, Event, EVENT_CATEGORIES, Connection, Family } from "@/lib/storage";
@@ -571,68 +570,76 @@ export default function EventsScreen() {
             <View style={{ width: 50 }} />
           </View>
           
-          <KeyboardAwareScrollViewCompat
-            style={styles.modalScroll}
-            contentContainerStyle={[styles.modalContent, { paddingBottom: insets.bottom + Spacing.xl }]}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
           >
-            <ThemedText type="caption" style={{ color: theme.textSecondary, marginBottom: Spacing.lg }}>
-              List your event for free to the SA community in New Zealand. Braais, playdates, sports days, church events and more!
-            </ThemedText>
-
-            <Input
-              label="Event Title"
-              placeholder="e.g., Weekend Braai at the Park"
-              value={title}
-              onChangeText={setTitle}
-              testID="input-title"
-            />
-            
-            <Input
-              label="Description (optional)"
-              placeholder="Tell people what to expect..."
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              numberOfLines={3}
-              testID="input-description"
-            />
-            
-            {renderDatePicker()}
-            
-            {renderTimePicker()}
-            
-            <Input
-              label="Location"
-              placeholder="e.g., Cornwall Park, Auckland"
-              value={location}
-              onChangeText={setLocation}
-              testID="input-location"
-            />
-            
-            <ThemedText type="caption" style={styles.categoryLabel}>Category</ThemedText>
-            <View style={styles.categoryGrid}>
-              {EVENT_CATEGORIES.map((cat) => (
-                <InterestTag
-                  key={cat}
-                  label={cat}
-                  selected={category === cat}
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setCategory(cat);
-                  }}
-                />
-              ))}
-            </View>
-            
-            <Button
-              onPress={handleAddEvent}
-              loading={saving}
-              size="large"
-              style={styles.createButton}
+            <ScrollView
+              style={styles.modalScroll}
+              contentContainerStyle={[styles.modalContent, { paddingBottom: insets.bottom + Spacing.xl + 100 }]}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={true}
             >
-              Create Event
-            </Button>
-          </KeyboardAwareScrollViewCompat>
+              <ThemedText type="caption" style={{ color: theme.textSecondary, marginBottom: Spacing.lg }}>
+                List your event for free to the SA community in New Zealand. Braais, playdates, sports days, church events and more!
+              </ThemedText>
+
+              <Input
+                label="Event Title"
+                placeholder="e.g., Weekend Braai at the Park"
+                value={title}
+                onChangeText={setTitle}
+                testID="input-title"
+              />
+              
+              <Input
+                label="Description (optional)"
+                placeholder="Tell people what to expect..."
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                numberOfLines={3}
+                testID="input-description"
+              />
+              
+              {renderDatePicker()}
+              
+              {renderTimePicker()}
+              
+              <Input
+                label="Location"
+                placeholder="e.g., Cornwall Park, Auckland"
+                value={location}
+                onChangeText={setLocation}
+                testID="input-location"
+              />
+              
+              <ThemedText type="caption" style={styles.categoryLabel}>Category</ThemedText>
+              <View style={styles.categoryGrid}>
+                {EVENT_CATEGORIES.map((cat) => (
+                  <InterestTag
+                    key={cat}
+                    label={cat}
+                    selected={category === cat}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setCategory(cat);
+                    }}
+                  />
+                ))}
+              </View>
+              
+              <Button
+                onPress={handleAddEvent}
+                loading={saving}
+                size="large"
+                style={styles.createButton}
+              >
+                Create Event
+              </Button>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </ThemedView>
       </Modal>
     </View>
