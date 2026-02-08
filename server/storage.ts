@@ -33,6 +33,8 @@ export interface IStorage {
   getEvents(requestingUserId?: string): Promise<(schema.Event & { user: schema.User; attendeeCount: number; attendees: string[]; distance?: number })[]>;
   createEvent(userId: string, data: Omit<schema.Event, "id" | "userId" | "createdAt">): Promise<schema.Event>;
   
+  updateEvent(id: string, data: Partial<Omit<schema.Event, "id" | "userId" | "createdAt">>): Promise<schema.Event | undefined>;
+  deleteEvent(id: string): Promise<void>;
   getEventAttendees(eventId: string): Promise<schema.EventAttendee[]>;
   addEventAttendee(eventId: string, userId: string): Promise<schema.EventAttendee>;
   removeEventAttendee(eventId: string, userId: string): Promise<void>;
@@ -307,6 +309,16 @@ export class DatabaseStorage implements IStorage {
       userId,
     }).returning();
     return event;
+  }
+
+  async updateEvent(id: string, data: Partial<Omit<schema.Event, "id" | "userId" | "createdAt">>): Promise<schema.Event | undefined> {
+    const [updated] = await db.update(schema.events).set(data).where(eq(schema.events.id, id)).returning();
+    return updated;
+  }
+
+  async deleteEvent(id: string): Promise<void> {
+    await db.delete(schema.eventAttendees).where(eq(schema.eventAttendees.eventId, id));
+    await db.delete(schema.events).where(eq(schema.events.id, id));
   }
 
   async getEventAttendees(eventId: string): Promise<schema.EventAttendee[]> {

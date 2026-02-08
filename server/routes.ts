@@ -361,6 +361,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/events/:eventId", async (req: Request, res: Response) => {
+    try {
+      const { title, description, date, time, location, category } = req.body;
+      const event = await storage.updateEvent(req.params.eventId, { title, description, date, time, location, category });
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+      res.json(event);
+    } catch (error) {
+      console.error("Update event error:", error);
+      res.status(500).json({ error: "Failed to update event" });
+    }
+  });
+
+  app.delete("/api/events/:eventId", async (req: Request, res: Response) => {
+    try {
+      await storage.deleteEvent(req.params.eventId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete event error:", error);
+      res.status(500).json({ error: "Failed to delete event" });
+    }
+  });
+
   app.post("/api/events/:eventId/attend", async (req: Request, res: Response) => {
     try {
       const { eventId } = req.params;

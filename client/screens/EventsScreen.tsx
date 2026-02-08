@@ -17,7 +17,7 @@ import { Input } from "@/components/Input";
 import { InterestTag } from "@/components/InterestTag";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
-import { getEvents, addEvent, getConnections, addConnection, getOrCreateThread, attendEvent, unattendEvent, formatRelativeTime, Event, EVENT_CATEGORIES, Connection, Family } from "@/lib/storage";
+import { getEvents, addEvent, updateEvent, deleteEvent, getConnections, addConnection, getOrCreateThread, attendEvent, unattendEvent, formatRelativeTime, Event, EVENT_CATEGORIES, Connection, Family } from "@/lib/storage";
 import { useAuth } from "@/context/AuthContext";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -53,6 +53,22 @@ export default function EventsScreen() {
   
   const [webDateInput, setWebDateInput] = useState("");
   const [webTimeInput, setWebTimeInput] = useState("");
+
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [editCategory, setEditCategory] = useState("Social");
+  const [editDate, setEditDate] = useState(new Date());
+  const [editTime, setEditTime] = useState(new Date());
+  const [editWebDateInput, setEditWebDateInput] = useState("");
+  const [editWebTimeInput, setEditWebTimeInput] = useState("");
+  const [editShowDatePicker, setEditShowDatePicker] = useState(false);
+  const [editShowTimePicker, setEditShowTimePicker] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -238,6 +254,94 @@ export default function EventsScreen() {
     }
   };
 
+  const parseTimeString = (timeStr: string | null): Date => {
+    const d = new Date();
+    if (!timeStr) return d;
+    try {
+      const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (match) {
+        let hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        const period = match[3];
+        if (period) {
+          if (period.toUpperCase() === "PM" && hours !== 12) hours += 12;
+          if (period.toUpperCase() === "AM" && hours === 12) hours = 0;
+        }
+        d.setHours(hours, minutes, 0, 0);
+      }
+    } catch {}
+    return d;
+  };
+
+  const parseDateString = (dateStr: string): Date => {
+    try {
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      }
+    } catch {}
+    return new Date();
+  };
+
+  const handleEditEvent = (event: Event) => {
+    setEditTitle(event.title);
+    setEditDescription(event.description || "");
+    setEditLocation(event.location);
+    setEditCategory(event.category);
+    setEditDate(parseDateString(event.date));
+    setEditTime(parseTimeString(event.time));
+    setEditWebDateInput(event.date || "");
+    setEditWebTimeInput(event.time || "");
+    setEditingEvent(event);
+    setEditModalVisible(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingEvent || !editTitle.trim() || !editLocation.trim()) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const dateForSubmission = Platform.OS === "web" && editWebDateInput ? editWebDateInput : formatDateForStorage(editDate);
+      const timeForSubmission = Platform.OS === "web" && editWebTimeInput ? editWebTimeInput : formatTimeForDisplay(editTime);
+      const updated = await updateEvent(editingEvent.id, {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+        date: dateForSubmission,
+        time: timeForSubmission,
+        location: editLocation.trim(),
+        category: editCategory,
+      });
+      if (updated) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await loadData();
+        setEditModalVisible(false);
+        setEditingEvent(null);
+      }
+    } catch (error) {
+      console.error("Error updating event:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!deleteConfirmId) return;
+    try {
+      const success = await deleteEvent(deleteConfirmId);
+      if (success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await loadData();
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+    } finally {
+      setDeleteConfirmId(null);
+    }
+  };
+
   const formatEventDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
@@ -331,7 +435,24 @@ export default function EventsScreen() {
             {item.user?.familyName || "Your Family"}
           </ThemedText>
         </View>
-        {item.userId !== user?.id && item.user ? (
+        {item.userId === user?.id ? (
+          <View style={styles.eventActions}>
+            <Pressable
+              onPress={() => handleEditEvent(item)}
+              style={styles.iconButton}
+              testID={`button-edit-event-${item.id}`}
+            >
+              <Feather name="edit-2" size={18} color={theme.textSecondary} />
+            </Pressable>
+            <Pressable
+              onPress={() => setDeleteConfirmId(item.id)}
+              style={styles.iconButton}
+              testID={`button-delete-event-${item.id}`}
+            >
+              <Feather name="trash-2" size={18} color={theme.textSecondary} />
+            </Pressable>
+          </View>
+        ) : item.user ? (
           <View style={styles.eventActions}>
             {getConnectionStatus(item.userId) === "connected" ? (
               <Pressable
@@ -364,6 +485,18 @@ export default function EventsScreen() {
           </View>
         ) : null}
       </View>
+
+      {deleteConfirmId === item.id ? (
+        <View style={[styles.deleteConfirmBar, { backgroundColor: theme.backgroundSecondary }]}>
+          <ThemedText type="caption" style={{ flex: 1 }}>Delete this event?</ThemedText>
+          <Pressable onPress={() => setDeleteConfirmId(null)} style={styles.deleteConfirmButton}>
+            <ThemedText type="small" style={{ color: theme.textSecondary, fontWeight: "600" }}>Cancel</ThemedText>
+          </Pressable>
+          <Pressable onPress={handleDeleteEvent} style={styles.deleteConfirmButton}>
+            <ThemedText type="small" style={{ color: theme.error, fontWeight: "600" }}>Delete</ThemedText>
+          </Pressable>
+        </View>
+      ) : null}
     </Pressable>
   );
 
@@ -638,6 +771,203 @@ export default function EventsScreen() {
           </ScrollView>
         </ThemedView>
       </Modal>
+
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <ThemedView style={styles.modalContainer}>
+          <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+            <Pressable onPress={() => setEditModalVisible(false)}>
+              <ThemedText type="body" style={{ color: theme.primary }}>Cancel</ThemedText>
+            </Pressable>
+            <ThemedText type="heading">Edit Event</ThemedText>
+            <View style={{ width: 50 }} />
+          </View>
+          
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={[styles.modalContent, { paddingBottom: insets.bottom + Spacing.xl + 120 }]}
+            keyboardShouldPersistTaps="always"
+            keyboardDismissMode="interactive"
+            automaticallyAdjustKeyboardInsets={true}
+            showsVerticalScrollIndicator={true}
+          >
+            <Input
+              label="Event Title"
+              placeholder="e.g., Weekend Braai at the Park"
+              value={editTitle}
+              onChangeText={setEditTitle}
+              testID="input-edit-title"
+            />
+            
+            <Input
+              label="Description (optional)"
+              placeholder="Tell people what to expect..."
+              value={editDescription}
+              onChangeText={setEditDescription}
+              multiline
+              numberOfLines={3}
+              testID="input-edit-description"
+            />
+            
+            <Input
+              label="Location"
+              placeholder="e.g., Cornwall Park, Auckland"
+              value={editLocation}
+              onChangeText={setEditLocation}
+              testID="input-edit-location"
+            />
+
+            {Platform.OS === "web" ? (
+              <View style={styles.webInputContainer}>
+                <ThemedText type="caption" style={styles.fieldLabel}>Date</ThemedText>
+                <View style={[styles.webInputWrapper, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
+                  <Feather name="calendar" size={18} color={theme.primary} style={styles.webInputIcon} />
+                  <RNTextInput
+                    style={[styles.webInput, { color: theme.text, fontFamily: Typography.body.fontFamily }]}
+                    placeholder="YYYY-MM-DD (e.g., 2026-02-15)"
+                    placeholderTextColor={theme.textSecondary}
+                    value={editWebDateInput}
+                    onChangeText={setEditWebDateInput}
+                    testID="input-edit-date"
+                  />
+                </View>
+              </View>
+            ) : (
+              <>
+                <ThemedText type="caption" style={styles.fieldLabel}>Date</ThemedText>
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setEditShowDatePicker(true);
+                  }}
+                  style={[styles.pickerButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
+                >
+                  <Feather name="calendar" size={18} color={theme.primary} />
+                  <ThemedText type="body" style={{ marginLeft: Spacing.md, flex: 1 }}>
+                    {formatDateForDisplay(editDate)}
+                  </ThemedText>
+                  <Feather name="chevron-down" size={18} color={theme.textSecondary} />
+                </Pressable>
+                
+                {editShowDatePicker && DateTimePicker ? (
+                  <View style={styles.pickerContainer}>
+                    <DateTimePicker
+                      value={editDate}
+                      mode="date"
+                      display={Platform.OS === "ios" ? "spinner" : "default"}
+                      onChange={(e: any, d?: Date) => {
+                        if (Platform.OS === "android") setEditShowDatePicker(false);
+                        if (d) setEditDate(d);
+                      }}
+                      minimumDate={new Date()}
+                      textColor={theme.text}
+                      accentColor={theme.primary}
+                    />
+                    {Platform.OS === "ios" ? (
+                      <Button
+                        variant="secondary"
+                        size="small"
+                        onPress={() => setEditShowDatePicker(false)}
+                        style={styles.doneButton}
+                      >
+                        Done
+                      </Button>
+                    ) : null}
+                  </View>
+                ) : null}
+              </>
+            )}
+
+            {Platform.OS === "web" ? (
+              <View style={styles.webInputContainer}>
+                <ThemedText type="caption" style={styles.fieldLabel}>Time</ThemedText>
+                <View style={[styles.webInputWrapper, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
+                  <Feather name="clock" size={18} color={theme.primary} style={styles.webInputIcon} />
+                  <RNTextInput
+                    style={[styles.webInput, { color: theme.text, fontFamily: Typography.body.fontFamily }]}
+                    placeholder="e.g., 2:00 PM"
+                    placeholderTextColor={theme.textSecondary}
+                    value={editWebTimeInput}
+                    onChangeText={setEditWebTimeInput}
+                    testID="input-edit-time"
+                  />
+                </View>
+              </View>
+            ) : (
+              <>
+                <ThemedText type="caption" style={styles.fieldLabel}>Time</ThemedText>
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setEditShowTimePicker(true);
+                  }}
+                  style={[styles.pickerButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
+                >
+                  <Feather name="clock" size={18} color={theme.primary} />
+                  <ThemedText type="body" style={{ marginLeft: Spacing.md, flex: 1 }}>
+                    {formatTimeForDisplay(editTime)}
+                  </ThemedText>
+                  <Feather name="chevron-down" size={18} color={theme.textSecondary} />
+                </Pressable>
+                
+                {editShowTimePicker && DateTimePicker ? (
+                  <View style={styles.pickerContainer}>
+                    <DateTimePicker
+                      value={editTime}
+                      mode="time"
+                      display={Platform.OS === "ios" ? "spinner" : "default"}
+                      onChange={(e: any, t?: Date) => {
+                        if (Platform.OS === "android") setEditShowTimePicker(false);
+                        if (t) setEditTime(t);
+                      }}
+                      textColor={theme.text}
+                      accentColor={theme.primary}
+                    />
+                    {Platform.OS === "ios" ? (
+                      <Button
+                        variant="secondary"
+                        size="small"
+                        onPress={() => setEditShowTimePicker(false)}
+                        style={styles.doneButton}
+                      >
+                        Done
+                      </Button>
+                    ) : null}
+                  </View>
+                ) : null}
+              </>
+            )}
+            
+            <ThemedText type="caption" style={styles.categoryLabel}>Category</ThemedText>
+            <View style={styles.categoryGrid}>
+              {EVENT_CATEGORIES.map((cat) => (
+                <InterestTag
+                  key={cat}
+                  label={cat}
+                  selected={editCategory === cat}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setEditCategory(cat);
+                  }}
+                />
+              ))}
+            </View>
+            
+            <Button
+              onPress={handleSaveEdit}
+              loading={editSaving}
+              size="large"
+              style={styles.createButton}
+            >
+              Save
+            </Button>
+          </ScrollView>
+        </ThemedView>
+      </Modal>
     </View>
   );
 }
@@ -812,5 +1142,22 @@ const styles = StyleSheet.create({
   },
   createButton: {
     marginTop: Spacing.lg,
+  },
+  iconButton: {
+    padding: Spacing.sm,
+  },
+  deleteConfirmBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: BorderRadius.xs,
+    padding: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  deleteConfirmButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
   },
 });

@@ -18,7 +18,7 @@ import { Input } from "@/components/Input";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
-import { getBusinesses, createBusiness, formatRelativeTime, Business, getConnections, addConnection, getOrCreateThread, Connection, Family } from "@/lib/storage";
+import { getBusinesses, createBusiness, updateBusiness, deleteBusiness, formatRelativeTime, Business, getConnections, addConnection, getOrCreateThread, Connection, Family } from "@/lib/storage";
 import { useAuth } from "@/context/AuthContext";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { getApiUrl } from "@/lib/query-client";
@@ -48,6 +48,19 @@ export default function BusinessHubScreen() {
   const [website, setWebsite] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [promotion, setPromotion] = useState("");
+
+  const [editBizModalVisible, setEditBizModalVisible] = useState(false);
+  const [editingBiz, setEditingBiz] = useState<Business | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editWebsite, setEditWebsite] = useState("");
+  const [editPromotion, setEditPromotion] = useState("");
+  const [editLogoUrl, setEditLogoUrl] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [deleteBizConfirmId, setDeleteBizConfirmId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -196,6 +209,95 @@ export default function BusinessHubScreen() {
     Linking.openURL(fullUrl);
   };
 
+  const handleEditBusiness = (biz: Business) => {
+    setEditName(biz.name);
+    setEditDescription(biz.description || "");
+    setEditLocation(biz.location || "");
+    setEditPhone(biz.phone || "");
+    setEditEmail(biz.email || "");
+    setEditWebsite(biz.website || "");
+    setEditPromotion(biz.promotion || "");
+    setEditLogoUrl(biz.logoUrl || "");
+    setEditingBiz(biz);
+    setEditBizModalVisible(true);
+  };
+
+  const handleSaveBizEdit = async () => {
+    if (!editingBiz || !editName.trim()) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const updated = await updateBusiness(editingBiz.id, {
+        name: editName.trim(),
+        description: editDescription.trim() || null,
+        location: editLocation.trim() || null,
+        phone: editPhone.trim() || null,
+        email: editEmail.trim() || null,
+        website: editWebsite.trim() || null,
+        promotion: editPromotion.trim() || null,
+        logoUrl: editLogoUrl || null,
+      });
+      if (updated) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await loadData();
+        setEditBizModalVisible(false);
+        setEditingBiz(null);
+      }
+    } catch (error) {
+      console.error("Error updating business:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleDeleteBusiness = async () => {
+    if (!deleteBizConfirmId) return;
+    try {
+      const success = await deleteBusiness(deleteBizConfirmId);
+      if (success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setBusinesses(businesses.filter((b) => b.id !== deleteBizConfirmId));
+      }
+    } catch (error) {
+      console.error("Error deleting business:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setDeleteBizConfirmId(null);
+    }
+  };
+
+  const handlePickEditLogo = () => {
+    showImagePickerOptions(
+      async () => {
+        const result = await launchCamera();
+        if (result) {
+          const response = await fetch(result.uri);
+          const blob = await response.blob();
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setEditLogoUrl(reader.result as string);
+          };
+          reader.readAsDataURL(blob);
+        }
+      },
+      async () => {
+        const result = await launchImageLibrary();
+        if (result) {
+          const response = await fetch(result.uri);
+          const blob = await response.blob();
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setEditLogoUrl(reader.result as string);
+          };
+          reader.readAsDataURL(blob);
+        }
+      }
+    );
+  };
+
   const resolveLogoUrl = (url: string | null) => {
     if (!url) return null;
     if (url.startsWith("http") || url.startsWith("data:")) return url;
@@ -326,8 +428,43 @@ export default function BusinessHubScreen() {
                 </Pressable>
               )}
             </View>
+          ) : isOwner ? (
+            <View style={styles.bizActions}>
+              <Pressable
+                style={styles.ownerIconButton}
+                onPress={() => handleEditBusiness(item)}
+                testID={`button-edit-business-${item.id}`}
+              >
+                <Feather name="edit-2" size={18} color={theme.textSecondary} />
+              </Pressable>
+              <Pressable
+                style={styles.ownerIconButton}
+                onPress={() => setDeleteBizConfirmId(item.id)}
+                testID={`button-delete-business-${item.id}`}
+              >
+                <Feather name="trash-2" size={18} color={theme.textSecondary} />
+              </Pressable>
+            </View>
           ) : null}
         </View>
+
+        {deleteBizConfirmId === item.id ? (
+          <View style={[styles.deleteConfirmBar, { backgroundColor: theme.backgroundSecondary, borderTopColor: theme.border }]}>
+            <ThemedText type="caption" style={{ flex: 1 }}>Delete this listing?</ThemedText>
+            <Pressable
+              style={[styles.confirmButton, { backgroundColor: theme.backgroundDefault }]}
+              onPress={() => setDeleteBizConfirmId(null)}
+            >
+              <ThemedText type="small">Cancel</ThemedText>
+            </Pressable>
+            <Pressable
+              style={[styles.confirmButton, { backgroundColor: theme.error }]}
+              onPress={handleDeleteBusiness}
+            >
+              <ThemedText type="small" style={{ color: "#FFFFFF" }}>Delete</ThemedText>
+            </Pressable>
+          </View>
+        ) : null}
       </Pressable>
     );
   };
@@ -506,6 +643,115 @@ export default function BusinessHubScreen() {
           </KeyboardAwareScrollViewCompat>
         </ThemedView>
       </Modal>
+
+      <Modal
+        visible={editBizModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setEditBizModalVisible(false)}
+      >
+        <ThemedView style={styles.modalContainer}>
+          <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+            <Pressable onPress={() => setEditBizModalVisible(false)}>
+              <ThemedText type="body" style={{ color: theme.primary }}>Cancel</ThemedText>
+            </Pressable>
+            <ThemedText type="heading">Edit Business</ThemedText>
+            <View style={{ width: 50 }} />
+          </View>
+
+          <KeyboardAwareScrollViewCompat
+            style={styles.modalScroll}
+            contentContainerStyle={[styles.modalContent, { paddingBottom: insets.bottom + Spacing.xl }]}
+          >
+            <Pressable
+              style={[styles.logoUpload, { borderColor: theme.border, backgroundColor: theme.backgroundSecondary }]}
+              onPress={handlePickEditLogo}
+            >
+              {editLogoUrl ? (
+                <Image source={{ uri: resolveLogoUrl(editLogoUrl) || editLogoUrl }} style={styles.logoPreview} contentFit="cover" />
+              ) : (
+                <View style={styles.logoPlaceholder}>
+                  <Feather name="camera" size={28} color={theme.textSecondary} />
+                  <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
+                    Add Logo (optional)
+                  </ThemedText>
+                </View>
+              )}
+            </Pressable>
+
+            <Input
+              label="Business Name"
+              placeholder="e.g., Boerewors Rolls by Tannie Elsa"
+              value={editName}
+              onChangeText={setEditName}
+              testID="input-edit-business-name"
+            />
+
+            <Input
+              label="Description (optional)"
+              placeholder="What does your business offer?"
+              value={editDescription}
+              onChangeText={setEditDescription}
+              multiline
+              numberOfLines={3}
+              testID="input-edit-business-description"
+            />
+
+            <Input
+              label="Location (optional)"
+              placeholder="e.g., North Shore, Auckland"
+              value={editLocation}
+              onChangeText={setEditLocation}
+              testID="input-edit-business-location"
+            />
+
+            <Input
+              label="Phone (optional)"
+              placeholder="e.g., 021 123 4567"
+              value={editPhone}
+              onChangeText={setEditPhone}
+              keyboardType="phone-pad"
+              testID="input-edit-business-phone"
+            />
+
+            <Input
+              label="Email (optional)"
+              placeholder="e.g., hello@mybusiness.co.nz"
+              value={editEmail}
+              onChangeText={setEditEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              testID="input-edit-business-email"
+            />
+
+            <Input
+              label="Website (optional)"
+              placeholder="e.g., www.mybusiness.co.nz"
+              value={editWebsite}
+              onChangeText={setEditWebsite}
+              autoCapitalize="none"
+              testID="input-edit-business-website"
+            />
+
+            <Input
+              label="Current Promotion (optional)"
+              placeholder="e.g., 10% off for SA Connect families!"
+              value={editPromotion}
+              onChangeText={setEditPromotion}
+              testID="input-edit-business-promotion"
+            />
+
+            <Button
+              onPress={handleSaveBizEdit}
+              loading={editSaving}
+              size="large"
+              style={styles.createButton}
+            >
+              Save
+            </Button>
+          </KeyboardAwareScrollViewCompat>
+        </ThemedView>
+      </Modal>
     </View>
   );
 }
@@ -650,5 +896,22 @@ const styles = StyleSheet.create({
   },
   createButton: {
     marginTop: Spacing.lg,
+  },
+  ownerIconButton: {
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.xs,
+  },
+  deleteConfirmBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: Spacing.sm,
+  },
+  confirmButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.xs,
   },
 });

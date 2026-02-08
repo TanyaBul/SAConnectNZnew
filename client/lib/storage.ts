@@ -257,6 +257,31 @@ export async function addEvent(
   }
 }
 
+export async function updateEvent(
+  eventId: string,
+  data: { title?: string; description?: string; date?: string; time?: string; location?: string; category?: string }
+): Promise<Event | null> {
+  try {
+    const response = await apiRequest("PUT", `/api/events/${eventId}`, data);
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating event:", error);
+    return null;
+  }
+}
+
+export async function deleteEvent(eventId: string): Promise<boolean> {
+  try {
+    const response = await fetch(new URL(`/api/events/${eventId}`, getApiUrl()).toString(), {
+      method: "DELETE",
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    return false;
+  }
+}
+
 export async function attendEvent(eventId: string, userId: string): Promise<boolean> {
   try {
     const response = await apiRequest("POST", `/api/events/${eventId}/attend`, { userId });
