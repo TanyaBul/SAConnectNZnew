@@ -288,7 +288,7 @@ export default function DiscoverScreen() {
           <Feather name="chevron-right" size={24} color={theme.textSecondary} />
         </Pressable>
 
-        {families.length < 3 ? (
+        {families.length < 10 ? (
           <View style={[styles.welcomeCard, { backgroundColor: theme.backgroundDefault, ...Shadows.card }]}>
             <View style={styles.welcomeIconRow}>
               <Feather name="heart" size={20} color={theme.primary} />
