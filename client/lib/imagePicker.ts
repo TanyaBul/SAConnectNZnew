@@ -3,6 +3,7 @@ import * as ImagePicker from "expo-image-picker";
 
 export interface ImagePickerResult {
   uri: string;
+  base64?: string;
   width: number;
   height: number;
 }
@@ -87,17 +88,20 @@ export async function launchCamera(): Promise<ImagePickerResult | null> {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.8,
+      quality: 0.7,
+      base64: true,
     });
     
     if (result.canceled || !result.assets[0]) {
       return null;
     }
     
+    const asset = result.assets[0];
     return {
-      uri: result.assets[0].uri,
-      width: result.assets[0].width,
-      height: result.assets[0].height,
+      uri: asset.uri,
+      base64: asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : undefined,
+      width: asset.width,
+      height: asset.height,
     };
   } catch (error) {
     console.log("Camera not available:", error);
@@ -116,17 +120,20 @@ export async function launchImageLibrary(): Promise<ImagePickerResult | null> {
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
     allowsEditing: true,
     aspect: [1, 1],
-    quality: 0.8,
+    quality: 0.7,
+    base64: true,
   });
   
   if (result.canceled || !result.assets[0]) {
     return null;
   }
   
+  const asset = result.assets[0];
   return {
-    uri: result.assets[0].uri,
-    width: result.assets[0].width,
-    height: result.assets[0].height,
+    uri: asset.uri,
+    base64: asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : undefined,
+    width: asset.width,
+    height: asset.height,
   };
 }
 
