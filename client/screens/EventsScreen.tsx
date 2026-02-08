@@ -565,6 +565,10 @@ export default function EventsScreen() {
             style={styles.modalScroll}
             contentContainerStyle={[styles.modalContent, { paddingBottom: insets.bottom + Spacing.xl }]}
           >
+            <ThemedText type="caption" style={{ color: theme.textSecondary, marginBottom: Spacing.lg }}>
+              List your event for free to the SA community in New Zealand. Braais, playdates, sports days, church events and more!
+            </ThemedText>
+
             <Input
               label="Event Title"
               placeholder="e.g., Weekend Braai at the Park"
