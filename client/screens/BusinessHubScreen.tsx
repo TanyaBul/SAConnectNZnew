@@ -15,11 +15,10 @@ import { Avatar } from "@/components/Avatar";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
-import { InterestTag } from "@/components/InterestTag";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
-import { getBusinesses, createBusiness, formatRelativeTime, Business, BUSINESS_CATEGORIES, getConnections, addConnection, getOrCreateThread, Connection, Family } from "@/lib/storage";
+import { getBusinesses, createBusiness, formatRelativeTime, Business, getConnections, addConnection, getOrCreateThread, Connection, Family } from "@/lib/storage";
 import { useAuth } from "@/context/AuthContext";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { getApiUrl } from "@/lib/query-client";
@@ -39,12 +38,10 @@ export default function BusinessHubScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("Food & Baking");
   const [location, setLocation] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -79,10 +76,6 @@ export default function BusinessHubScreen() {
     loadData();
   };
 
-  const filteredBusinesses = selectedCategory
-    ? businesses.filter(b => b.category === selectedCategory)
-    : businesses;
-
   const handlePickLogo = () => {
     showImagePickerOptions(
       async () => {
@@ -115,7 +108,6 @@ export default function BusinessHubScreen() {
   const resetForm = () => {
     setName("");
     setDescription("");
-    setCategory("Food & Baking");
     setLocation("");
     setPhone("");
     setEmail("");
@@ -125,7 +117,7 @@ export default function BusinessHubScreen() {
   };
 
   const handleAddBusiness = async () => {
-    if (!name.trim() || !category) {
+    if (!name.trim()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
@@ -136,7 +128,7 @@ export default function BusinessHubScreen() {
       const newBiz = await createBusiness(user.id, {
         name: name.trim(),
         description: description.trim() || undefined,
-        category,
+        category: "Other",
         location: location.trim() || undefined,
         phone: phone.trim() || undefined,
         email: email.trim() || undefined,
@@ -204,24 +196,6 @@ export default function BusinessHubScreen() {
     Linking.openURL(fullUrl);
   };
 
-  const getCategoryIcon = (cat: string): string => {
-    const icons: Record<string, string> = {
-      "Food & Baking": "coffee",
-      "Beauty & Wellness": "heart",
-      "Home Services": "home",
-      "Health & Fitness": "activity",
-      "Education & Tutoring": "book-open",
-      "Childcare": "smile",
-      "Events & Entertainment": "music",
-      "Arts & Crafts": "pen-tool",
-      "Professional Services": "briefcase",
-      "Retail": "shopping-bag",
-      "Transport": "truck",
-      "Other": "grid",
-    };
-    return icons[cat] || "grid";
-  };
-
   const resolveLogoUrl = (url: string | null) => {
     if (!url) return null;
     if (url.startsWith("http") || url.startsWith("data:")) return url;
@@ -251,18 +225,13 @@ export default function BusinessHubScreen() {
             />
           ) : (
             <View style={[styles.bizLogoPlaceholder, { backgroundColor: theme.backgroundSecondary }]}>
-              <Feather name={getCategoryIcon(item.category) as any} size={24} color={theme.primary} />
+              <Feather name="briefcase" size={24} color={theme.primary} />
             </View>
           )}
           <View style={styles.bizInfo}>
             <ThemedText type="heading" numberOfLines={1} style={styles.bizName}>
               {item.name}
             </ThemedText>
-            <View style={[styles.categoryBadge, { backgroundColor: theme.primary + "15" }]}>
-              <ThemedText type="small" style={{ color: theme.primary, fontWeight: "500" }}>
-                {item.category}
-              </ThemedText>
-            </View>
           </View>
         </View>
 
@@ -363,42 +332,6 @@ export default function BusinessHubScreen() {
     );
   };
 
-  const renderCategoryFilter = () => (
-    <View style={styles.filterRow}>
-      <Pressable
-        style={[
-          styles.filterChip,
-          { backgroundColor: !selectedCategory ? theme.primary : theme.backgroundSecondary },
-        ]}
-        onPress={() => {
-          Haptics.selectionAsync();
-          setSelectedCategory(null);
-        }}
-      >
-        <ThemedText type="small" style={{ color: !selectedCategory ? "#FFFFFF" : theme.text, fontWeight: "500" }}>
-          All
-        </ThemedText>
-      </Pressable>
-      {BUSINESS_CATEGORIES.map((cat) => (
-        <Pressable
-          key={cat}
-          style={[
-            styles.filterChip,
-            { backgroundColor: selectedCategory === cat ? theme.primary : theme.backgroundSecondary },
-          ]}
-          onPress={() => {
-            Haptics.selectionAsync();
-            setSelectedCategory(selectedCategory === cat ? null : cat);
-          }}
-        >
-          <ThemedText type="small" style={{ color: selectedCategory === cat ? "#FFFFFF" : theme.text, fontWeight: "500" }}>
-            {cat}
-          </ThemedText>
-        </Pressable>
-      ))}
-    </View>
-  );
-
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.backgroundRoot }]}>
@@ -410,17 +343,16 @@ export default function BusinessHubScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <FlatList
-        data={filteredBusinesses}
+        data={businesses}
         keyExtractor={(item) => item.id}
         renderItem={renderBusiness}
-        ListHeaderComponent={businesses.length > 0 ? renderCategoryFilter : null}
         contentContainerStyle={[
           styles.listContent,
           {
             paddingTop: headerHeight + Spacing.lg,
             paddingBottom: tabBarHeight + Spacing.lg,
           },
-          filteredBusinesses.length === 0 && businesses.length === 0 && styles.emptyList,
+          businesses.length === 0 && styles.emptyList,
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
         refreshControl={
@@ -432,25 +364,13 @@ export default function BusinessHubScreen() {
           />
         }
         ListEmptyComponent={
-          businesses.length === 0 ? (
-            <EmptyState
-              image="community"
-              title="No Businesses Yet"
-              description="Be the first to list your business for the SA community!"
-              actionLabel="Add Your Business"
-              onAction={() => setModalVisible(true)}
-            />
-          ) : (
-            <View style={styles.noResults}>
-              <Feather name="search" size={48} color={theme.textSecondary} />
-              <ThemedText type="heading" style={{ marginTop: Spacing.lg, textAlign: "center" }}>
-                No businesses in this category
-              </ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary, textAlign: "center", marginTop: Spacing.sm }}>
-                Try a different category or add your own listing
-              </ThemedText>
-            </View>
-          )
+          <EmptyState
+            image="community"
+            title="No Businesses Yet"
+            description="Be the first to list your business for the SA community!"
+            actionLabel="Add Your Business"
+            onAction={() => setModalVisible(true)}
+          />
         }
       />
 
@@ -520,21 +440,6 @@ export default function BusinessHubScreen() {
               numberOfLines={3}
               testID="input-business-description"
             />
-
-            <ThemedText type="caption" style={styles.fieldLabel}>Category</ThemedText>
-            <View style={styles.categoryGrid}>
-              {BUSINESS_CATEGORIES.map((cat) => (
-                <InterestTag
-                  key={cat}
-                  label={cat}
-                  selected={category === cat}
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setCategory(cat);
-                  }}
-                />
-              ))}
-            </View>
 
             <Input
               label="Location (optional)"
@@ -610,17 +515,6 @@ const styles = StyleSheet.create({
   emptyList: {
     flex: 1,
   },
-  filterRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
-  },
-  filterChip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
-    borderRadius: BorderRadius.full,
-  },
   bizCard: {
     borderRadius: BorderRadius.md,
     padding: Spacing.lg,
@@ -648,12 +542,6 @@ const styles = StyleSheet.create({
   },
   bizName: {
     marginBottom: Spacing.xs,
-  },
-  categoryBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.xs,
   },
   promoBar: {
     flexDirection: "row",
@@ -695,11 +583,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.xs,
-  },
-  noResults: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: Spacing["4xl"],
   },
   fab: {
     position: "absolute",
@@ -745,16 +628,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  fieldLabel: {
-    marginBottom: Spacing.sm,
-    fontWeight: "500",
-  },
-  categoryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
   },
   createButton: {
     marginTop: Spacing.lg,
