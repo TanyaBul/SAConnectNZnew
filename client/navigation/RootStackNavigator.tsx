@@ -13,6 +13,7 @@ import TermsOfServiceScreen from "@/screens/TermsOfServiceScreen";
 import HelpFAQScreen from "@/screens/HelpFAQScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
 import AdminScreen from "@/screens/AdminScreen";
+import EditWelcomeCardsScreen from "@/screens/EditWelcomeCardsScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -30,6 +31,7 @@ export type RootStackParamList = {
   HelpFAQ: undefined;
   Subscription: undefined;
   Admin: undefined;
+  EditWelcomeCards: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -124,6 +126,13 @@ export default function RootStackNavigator() {
             component={AdminScreen}
             options={{
               headerTitle: "Admin Dashboard",
+            }}
+          />
+          <Stack.Screen
+            name="EditWelcomeCards"
+            component={EditWelcomeCardsScreen}
+            options={{
+              headerTitle: "Welcome Cards",
             }}
           />
       </>

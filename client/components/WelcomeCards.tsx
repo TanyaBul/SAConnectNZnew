@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from "react";
-import { View, StyleSheet, Dimensions, Pressable, Image } from "react-native";
+import React, { useState, useCallback, useEffect } from "react";
+import { View, StyleSheet, Dimensions, Pressable, Image, ActivityIndicator } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { getApiUrl } from "@/lib/query-client";
 
 const logoImage = require("../../assets/images/icon.png");
 
@@ -25,15 +26,18 @@ const CARD_HEIGHT = SCREEN_HEIGHT * 0.65;
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.2;
 
 interface WelcomeCardData {
-  icon: keyof typeof Feather.glyphMap;
+  id?: string;
+  icon: string;
   header: string;
   title: string;
   bullets: string[];
   accentColor: string;
   borderColor: string;
+  promoText: string;
+  imageUrl?: string | null;
 }
 
-const CARDS: WelcomeCardData[] = [
+const DEFAULT_CARDS: WelcomeCardData[] = [
   {
     icon: "heart",
     header: "Welcome Back",
@@ -45,6 +49,7 @@ const CARDS: WelcomeCardData[] = [
     ],
     accentColor: "#E8703A",
     borderColor: "#E8703A",
+    promoText: "Watch this space for special promotions and events",
   },
   {
     icon: "calendar",
@@ -57,6 +62,7 @@ const CARDS: WelcomeCardData[] = [
     ],
     accentColor: "#1A7F7F",
     borderColor: "#1A7F7F",
+    promoText: "Watch this space for special promotions and events",
   },
   {
     icon: "message-circle",
@@ -69,6 +75,7 @@ const CARDS: WelcomeCardData[] = [
     ],
     accentColor: "#F5A623",
     borderColor: "#F5A623",
+    promoText: "Watch this space for special promotions and events",
   },
 ];
 
@@ -143,6 +150,8 @@ function SwipeableCard({ card, onDismiss, isTop, index, totalRemaining }: Swipea
     };
   });
 
+  const hasImage = card.imageUrl ? true : false;
+
   return (
     <GestureDetector gesture={panGesture}>
       <Animated.View
@@ -156,15 +165,23 @@ function SwipeableCard({ card, onDismiss, isTop, index, totalRemaining }: Swipea
           animatedCardStyle,
         ]}
       >
-        <Image
-          source={logoImage}
-          style={styles.watermarkLogo}
-          resizeMode="contain"
-        />
+        {hasImage ? (
+          <Image
+            source={{ uri: card.imageUrl!.startsWith("/") ? new URL(card.imageUrl!, getApiUrl()).toString() : card.imageUrl! }}
+            style={styles.cardImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <Image
+            source={logoImage}
+            style={styles.watermarkLogo}
+            resizeMode="contain"
+          />
+        )}
 
         <View style={styles.cardContent}>
           <View style={[styles.headerBadge, { backgroundColor: card.accentColor + "15" }]}>
-            <Feather name={card.icon} size={18} color={card.accentColor} />
+            <Feather name={card.icon as any} size={18} color={card.accentColor} />
             <ThemedText type="caption" style={{ color: card.accentColor, fontWeight: "600" }}>
               {card.header}
             </ThemedText>
@@ -175,8 +192,8 @@ function SwipeableCard({ card, onDismiss, isTop, index, totalRemaining }: Swipea
           </ThemedText>
 
           <View style={styles.bulletList}>
-            {card.bullets.map((bullet) => (
-              <View key={bullet} style={styles.bulletRow}>
+            {card.bullets.map((bullet, idx) => (
+              <View key={`${bullet}-${idx}`} style={styles.bulletRow}>
                 <View style={[styles.bulletDot, { backgroundColor: card.accentColor }]} />
                 <ThemedText type="body" style={[styles.bulletText, { color: theme.textSecondary }]}>
                   {bullet}
@@ -185,16 +202,18 @@ function SwipeableCard({ card, onDismiss, isTop, index, totalRemaining }: Swipea
             ))}
           </View>
 
-          <View style={[styles.promoBanner, { backgroundColor: card.accentColor }]}>
-            <View style={styles.promoIconRow}>
-              <Feather name="star" size={14} color="#FFFFFF" />
-              <Feather name="star" size={14} color="#FFFFFF" />
-              <Feather name="star" size={14} color="#FFFFFF" />
+          {card.promoText ? (
+            <View style={[styles.promoBanner, { backgroundColor: card.accentColor }]}>
+              <View style={styles.promoIconRow}>
+                <Feather name="star" size={14} color="#FFFFFF" />
+                <Feather name="star" size={14} color="#FFFFFF" />
+                <Feather name="star" size={14} color="#FFFFFF" />
+              </View>
+              <ThemedText type="body" style={styles.promoText}>
+                {card.promoText}
+              </ThemedText>
             </View>
-            <ThemedText type="body" style={styles.promoText}>
-              Watch this space for special promotions and events
-            </ThemedText>
-          </View>
+          ) : null}
         </View>
 
         {isTop ? (
@@ -243,20 +262,54 @@ interface WelcomeCardsProps {
 }
 
 export function WelcomeCards({ onComplete }: WelcomeCardsProps) {
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const [cards, setCards] = useState<WelcomeCardData[]>([]);
   const [dismissedCount, setDismissedCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const remainingCards = CARDS.slice(dismissedCount);
+  useEffect(() => {
+    async function fetchCards() {
+      try {
+        const response = await fetch(new URL("/api/welcome-cards", getApiUrl()).toString());
+        if (response.ok) {
+          const data = await response.json();
+          if (data.length > 0) {
+            setCards(data);
+          } else {
+            setCards(DEFAULT_CARDS);
+          }
+        } else {
+          setCards(DEFAULT_CARDS);
+        }
+      } catch {
+        setCards(DEFAULT_CARDS);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCards();
+  }, []);
+
+  const remainingCards = cards.slice(dismissedCount);
 
   const handleDismiss = useCallback(() => {
     setDismissedCount((prev) => {
       const next = prev + 1;
-      if (next >= CARDS.length) {
+      if (next >= cards.length) {
         setTimeout(() => onComplete(), 100);
       }
       return next;
     });
-  }, [onComplete]);
+  }, [onComplete, cards.length]);
+
+  if (loading) {
+    return (
+      <View style={[styles.overlay, { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing.lg }]}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+      </View>
+    );
+  }
 
   if (remainingCards.length === 0) {
     return null;
@@ -268,9 +321,9 @@ export function WelcomeCards({ onComplete }: WelcomeCardsProps) {
 
       <View style={styles.topRow}>
         <View style={styles.dots}>
-          {CARDS.map((c, i) => (
+          {cards.map((c, i) => (
             <View
-              key={c.title}
+              key={`dot-${i}`}
               style={[
                 styles.dot,
                 {
@@ -297,7 +350,7 @@ export function WelcomeCards({ onComplete }: WelcomeCardsProps) {
               : 2 - reversedIndex;
             return (
               <SwipeableCard
-                key={card.title}
+                key={card.id || card.title}
                 card={card}
                 onDismiss={handleDismiss}
                 isTop={actualIndex === 0}
@@ -364,6 +417,12 @@ const styles = StyleSheet.create({
     right: -30,
     bottom: 40,
   },
+  cardImage: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    opacity: 0.12,
+  },
   cardContent: {
     flex: 1,
     paddingTop: Spacing["4xl"],
@@ -423,8 +482,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   promoBanner: {
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.md,
+    marginTop: Spacing.xl,
     paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.lg,

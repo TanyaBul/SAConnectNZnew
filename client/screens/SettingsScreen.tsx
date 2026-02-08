@@ -212,6 +212,20 @@ export default function SettingsScreen() {
               </View>
               <Feather name="chevron-right" size={20} color={theme.textSecondary} />
             </Pressable>
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <Pressable 
+              style={styles.row}
+              onPress={() => navigation.navigate("EditWelcomeCards")}
+              testID="button-edit-welcome-cards"
+            >
+              <View style={styles.rowLeft}>
+                <Feather name="layers" size={20} color={theme.primary} />
+                <ThemedText type="body" style={styles.rowLabel}>
+                  Welcome Cards
+                </ThemedText>
+              </View>
+              <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+            </Pressable>
           </View>
         ) : null}
 
