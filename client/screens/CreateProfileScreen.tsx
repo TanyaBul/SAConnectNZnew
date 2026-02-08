@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet, Pressable, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -34,6 +34,19 @@ export default function CreateProfileScreen() {
     user?.interests || []
   );
   const [loading, setLoading] = useState(false);
+  const [customInterest, setCustomInterest] = useState("");
+
+  const addCustomInterest = () => {
+    const trimmed = customInterest.trim();
+    if (!trimmed) return;
+    if (selectedInterests.some((i) => i.toLowerCase() === trimmed.toLowerCase())) {
+      setCustomInterest("");
+      return;
+    }
+    Haptics.selectionAsync();
+    setSelectedInterests([...selectedInterests, trimmed]);
+    setCustomInterest("");
+  };
 
   const handleAvatarPress = () => {
     showImagePickerOptions(
@@ -214,6 +227,48 @@ export default function CreateProfileScreen() {
           ))}
         </View>
 
+        {selectedInterests.filter((i) => !INTERESTS_OPTIONS.includes(i)).length > 0 ? (
+          <View style={styles.customInterestsSection}>
+            <ThemedText type="caption" style={[styles.customLabel, { color: theme.textSecondary }]}>
+              Your custom interests
+            </ThemedText>
+            <View style={styles.interestsGrid}>
+              {selectedInterests
+                .filter((i) => !INTERESTS_OPTIONS.includes(i))
+                .map((interest) => (
+                  <InterestTag
+                    key={interest}
+                    label={interest}
+                    selected
+                    showRemove
+                    onPress={() => toggleInterest(interest)}
+                  />
+                ))}
+            </View>
+          </View>
+        ) : null}
+
+        <View style={[styles.addInterestRow, { borderColor: theme.border }]}>
+          <TextInput
+            style={[styles.addInterestInput, { color: theme.text, backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
+            value={customInterest}
+            onChangeText={setCustomInterest}
+            placeholder="Add your own interest..."
+            placeholderTextColor={theme.textSecondary}
+            onSubmitEditing={addCustomInterest}
+            returnKeyType="done"
+            testID="input-custom-interest"
+          />
+          <Pressable
+            style={[styles.addInterestButton, { backgroundColor: customInterest.trim() ? theme.primary : theme.backgroundSecondary }]}
+            onPress={addCustomInterest}
+            disabled={!customInterest.trim()}
+            testID="button-add-interest"
+          >
+            <Feather name="plus" size={20} color={customInterest.trim() ? "#FFFFFF" : theme.textSecondary} />
+          </Pressable>
+        </View>
+
         <Button
           onPress={handleContinue}
           loading={loading}
@@ -297,7 +352,36 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  customInterestsSection: {
+    marginBottom: Spacing.lg,
+  },
+  customLabel: {
+    marginBottom: Spacing.sm,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  addInterestRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
     marginBottom: Spacing["3xl"],
+  },
+  addInterestInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    fontSize: 16,
+  },
+  addInterestButton: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
   },
   button: {
     marginBottom: Spacing.md,
