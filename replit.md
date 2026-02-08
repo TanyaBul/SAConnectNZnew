@@ -110,7 +110,9 @@ All data persists server-side - no more demo/sample data.
   - Multi-step flow: email → code verification → new password → success
   - Database table: password_reset_tokens
   - API endpoints: /api/auth/forgot-password, /api/auth/verify-reset-token, /api/auth/reset-password
-  - Reset codes displayed in app for testing (no email service integrated)
+  - Reset codes sent via Brevo email API (300 free emails/day)
+  - Branded HTML email template with SA Connect NZ branding
+  - Token no longer exposed in API response or displayed in app (app store compliant)
 - Admin Dashboard restricted to saconnectnz@gmail.com only
   - Client-side: Admin section only visible to admin email in Settings
   - Server-side: Admin API endpoints verify email header for authorization
