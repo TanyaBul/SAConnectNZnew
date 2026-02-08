@@ -173,23 +173,24 @@ function configureExpoAndLanding(app: express.Application) {
 
   log("Serving static Expo files with dynamic manifest routing");
 
+  const privacyPath = path.resolve(process.cwd(), "server", "templates", "privacy-policy.html");
+  const privacyHtml = fs.readFileSync(privacyPath, "utf-8");
+  const tosPath = path.resolve(process.cwd(), "server", "templates", "terms-of-service.html");
+  const tosHtml = fs.readFileSync(tosPath, "utf-8");
+
+  app.get("/privacy-policy", (_req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.status(200).send(privacyHtml);
+  });
+
+  app.get("/terms-of-service", (_req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.status(200).send(tosHtml);
+  });
+
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith("/api")) {
       return next();
-    }
-
-    if (req.path === "/privacy-policy") {
-      const ppPath = path.resolve(process.cwd(), "server", "templates", "privacy-policy.html");
-      const ppHtml = fs.readFileSync(ppPath, "utf-8");
-      res.setHeader("Content-Type", "text/html; charset=utf-8");
-      return res.status(200).send(ppHtml);
-    }
-
-    if (req.path === "/terms-of-service") {
-      const tosPath = path.resolve(process.cwd(), "server", "templates", "terms-of-service.html");
-      const tosHtml = fs.readFileSync(tosPath, "utf-8");
-      res.setHeader("Content-Type", "text/html; charset=utf-8");
-      return res.status(200).send(tosHtml);
     }
 
     if (req.path !== "/" && req.path !== "/manifest") {
