@@ -14,14 +14,15 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-import { addConnection, getConnections, blockUser, reportUser, REPORT_REASONS } from "@/lib/storage";
+import { addConnection, getConnections, blockUser, reportUser, getOrCreateThread, REPORT_REASONS } from "@/lib/storage";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "@/context/AuthContext";
 
 export default function FamilyDetailScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "FamilyDetail">>();
   const { family } = route.params;
   const { user } = useAuth();
@@ -61,6 +62,22 @@ export default function FamilyDetailScreen() {
       console.error("Error connecting:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMessage = async () => {
+    if (!user?.id) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const thread = await getOrCreateThread(user.id, family.id);
+      if (thread) {
+        navigation.navigate("Chat", {
+          threadId: thread.id,
+          family: { id: family.id, familyName: family.familyName, avatarUrl: family.avatarUrl } as any,
+        });
+      }
+    } catch (error) {
+      console.error("Error starting message:", error);
     }
   };
 
@@ -193,7 +210,7 @@ export default function FamilyDetailScreen() {
             <ThemedText type="body" style={[styles.connectedText, { color: theme.success }]}>
               You're connected with this family!
             </ThemedText>
-            <Button variant="secondary" style={styles.messageButton}>
+            <Button variant="secondary" style={styles.messageButton} onPress={handleMessage}>
               Send Message
             </Button>
           </View>
