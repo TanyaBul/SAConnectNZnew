@@ -313,18 +313,9 @@ export default function DiscoverScreen() {
             >
               <Feather 
                 name="users" 
-                size={16} 
+                size={22} 
                 color={activeTab === "families" ? theme.primary : theme.textSecondary} 
               />
-              <ThemedText
-                type="caption"
-                style={[
-                  styles.tabText,
-                  { color: activeTab === "families" ? theme.primary : theme.textSecondary },
-                ]}
-              >
-                Families
-              </ThemedText>
             </Pressable>
             <Pressable
               style={[
@@ -335,18 +326,9 @@ export default function DiscoverScreen() {
             >
               <Feather 
                 name="heart" 
-                size={16} 
+                size={22} 
                 color={activeTab === "connected" ? theme.primary : theme.textSecondary} 
               />
-              <ThemedText
-                type="caption"
-                style={[
-                  styles.tabText,
-                  { color: activeTab === "connected" ? theme.primary : theme.textSecondary },
-                ]}
-              >
-                Connected
-              </ThemedText>
               {connectedFamilies.length > 0 ? (
                 <View style={[styles.tabBadge, { backgroundColor: theme.success }]}>
                   <ThemedText type="small" style={{ color: "#fff", fontWeight: "600", fontSize: 10 }}>
@@ -364,18 +346,9 @@ export default function DiscoverScreen() {
             >
               <Feather 
                 name="user-plus" 
-                size={16} 
+                size={22} 
                 color={activeTab === "pending" ? theme.primary : theme.textSecondary} 
               />
-              <ThemedText
-                type="caption"
-                style={[
-                  styles.tabText,
-                  { color: activeTab === "pending" ? theme.primary : theme.textSecondary },
-                ]}
-              >
-                Requests
-              </ThemedText>
               {pendingRequests.length > 0 ? (
                 <View style={[styles.tabBadge, { backgroundColor: theme.error }]}>
                   <ThemedText type="small" style={{ color: "#fff", fontWeight: "600", fontSize: 10 }}>
@@ -393,18 +366,9 @@ export default function DiscoverScreen() {
             >
               <Feather 
                 name="message-circle" 
-                size={16} 
+                size={22} 
                 color={activeTab === "messages" ? theme.primary : theme.textSecondary} 
               />
-              <ThemedText
-                type="caption"
-                style={[
-                  styles.tabText,
-                  { color: activeTab === "messages" ? theme.primary : theme.textSecondary },
-                ]}
-              >
-                Messages
-              </ThemedText>
               {unreadMessagesCount > 0 ? (
                 <View style={[styles.tabBadge, { backgroundColor: theme.primary }]}>
                   <ThemedText type="small" style={{ color: "#fff", fontWeight: "600", fontSize: 10 }}>
@@ -570,25 +534,21 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.md,
     borderRadius: BorderRadius.sm,
-    gap: Spacing.xs,
-  },
-  tabText: {
-    fontWeight: "500",
   },
   tabBadge: {
+    position: "absolute",
+    top: 4,
+    right: 8,
     minWidth: 16,
     height: 16,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 4,
-    marginLeft: 2,
   },
   cardWrapper: {
     marginTop: Spacing.sm,
