@@ -214,9 +214,13 @@ export async function markThreadAsRead(threadId: string, userId: string): Promis
   }
 }
 
-export async function getEvents(): Promise<Event[]> {
+export async function getEvents(userId?: string): Promise<Event[]> {
   try {
-    const response = await fetch(new URL("/api/events", getApiUrl()).toString());
+    const url = new URL("/api/events", getApiUrl());
+    if (userId) {
+      url.searchParams.set("userId", userId);
+    }
+    const response = await fetch(url.toString());
     if (!response.ok) {
       return [];
     }

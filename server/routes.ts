@@ -333,9 +333,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/events", async (_req: Request, res: Response) => {
+  app.get("/api/events", async (req: Request, res: Response) => {
     try {
-      const events = await storage.getEvents();
+      const userId = req.query.userId as string | undefined;
+      const events = await storage.getEvents(userId);
       res.json(events.map((e) => ({
         ...e,
         user: sanitizeUser(e.user),

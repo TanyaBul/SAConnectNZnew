@@ -57,7 +57,7 @@ export default function EventsScreen() {
   const loadData = useCallback(async () => {
     try {
       const [eventsData, connectionsData] = await Promise.all([
-        getEvents(),
+        getEvents(user?.id),
         user?.id ? getConnections(user.id) : Promise.resolve([]),
       ]);
       setEvents(eventsData);

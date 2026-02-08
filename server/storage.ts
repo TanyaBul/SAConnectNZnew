@@ -30,7 +30,7 @@ export interface IStorage {
   sendMessage(threadId: string, senderId: string, text: string): Promise<schema.Message>;
   markThreadAsRead(threadId: string, userId: string): Promise<void>;
   
-  getEvents(): Promise<(schema.Event & { user: schema.User; attendeeCount: number; attendees: string[] })[]>;
+  getEvents(requestingUserId?: string): Promise<(schema.Event & { user: schema.User; attendeeCount: number; attendees: string[]; distance?: number })[]>;
   createEvent(userId: string, data: Omit<schema.Event, "id" | "userId" | "createdAt">): Promise<schema.Event>;
   
   getEventAttendees(eventId: string): Promise<schema.EventAttendee[]>;
@@ -278,19 +278,27 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getEvents(): Promise<(schema.Event & { user: schema.User; attendeeCount: number; attendees: string[] })[]> {
+  async getEvents(requestingUserId?: string): Promise<(schema.Event & { user: schema.User; attendeeCount: number; attendees: string[]; distance?: number })[]> {
     const eventsData = await db.select().from(schema.events).orderBy(desc(schema.events.createdAt));
+    
+    const requestingUser = requestingUserId ? await this.getUserById(requestingUserId) : null;
     
     const eventsWithUsers = await Promise.all(
       eventsData.map(async (event) => {
         const user = await this.getUserById(event.userId);
         const attendeesData = await db.select().from(schema.eventAttendees).where(eq(schema.eventAttendees.eventId, event.id));
         const attendees = attendeesData.map(a => a.userId);
-        return { ...event, user: user!, attendeeCount: attendees.length, attendees };
+        
+        let distance: number | undefined;
+        if (requestingUser?.lat && requestingUser?.lon && user?.lat && user?.lon) {
+          distance = this.calculateDistance(requestingUser.lat, requestingUser.lon, user.lat, user.lon);
+        }
+        
+        return { ...event, user: user!, attendeeCount: attendees.length, attendees, distance };
       })
     );
 
-    return eventsWithUsers.filter((e) => e.user);
+    return eventsWithUsers.filter((e) => e.user).sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
   }
 
   async createEvent(userId: string, data: Omit<schema.Event, "id" | "userId" | "createdAt">): Promise<schema.Event> {
