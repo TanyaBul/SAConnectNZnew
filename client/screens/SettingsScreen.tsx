@@ -13,6 +13,7 @@ import { BorderRadius, Spacing } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { usePurchases } from "@/context/PurchaseContext";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { getApiUrl } from "@/lib/query-client";
 
 export default function SettingsScreen() {
   const { theme } = useTheme();
@@ -63,15 +64,29 @@ export default function SettingsScreen() {
           onPress: () => {
             Alert.alert(
               "Confirm Deletion",
-              "This is your final confirmation. Type 'DELETE' to confirm you want to permanently delete your account.",
+              "This is your final confirmation. Are you sure you want to permanently delete your account and all associated data?",
               [
                 { text: "Cancel", style: "cancel" },
                 {
                   text: "Yes, Delete Everything",
                   style: "destructive",
                   onPress: async () => {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                    await signOut();
+                    try {
+                      const response = await fetch(
+                        new URL(`/api/users/${user?.id}`, getApiUrl()).toString(),
+                        { method: "DELETE" }
+                      );
+                      if (response.ok) {
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        await signOut();
+                      } else {
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                        Alert.alert("Error", "Failed to delete account. Please try again.");
+                      }
+                    } catch (error) {
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                      Alert.alert("Error", "Something went wrong. Please try again.");
+                    }
                   },
                 },
               ]

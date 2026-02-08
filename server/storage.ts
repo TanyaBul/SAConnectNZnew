@@ -66,6 +66,8 @@ export interface IStorage {
   createBusiness(userId: string, data: Omit<schema.Business, "id" | "userId" | "createdAt">): Promise<schema.Business>;
   updateBusiness(id: string, data: Partial<Omit<schema.Business, "id" | "userId" | "createdAt">>): Promise<schema.Business | undefined>;
   deleteBusiness(id: string): Promise<void>;
+
+  deleteUser(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -586,6 +588,13 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBusiness(id: string): Promise<void> {
     await db.delete(schema.businesses).where(eq(schema.businesses.id, id));
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const user = await this.getUserById(id);
+    if (!user) return false;
+    await db.delete(schema.users).where(eq(schema.users.id, id));
+    return true;
   }
 }
 
