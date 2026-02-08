@@ -184,6 +184,17 @@ function SwipeableCard({ card, onDismiss, isTop, index, totalRemaining }: Swipea
               </View>
             ))}
           </View>
+
+          <View style={[styles.promoBanner, { backgroundColor: card.accentColor }]}>
+            <View style={styles.promoIconRow}>
+              <Feather name="star" size={14} color="#FFFFFF" />
+              <Feather name="star" size={14} color="#FFFFFF" />
+              <Feather name="star" size={14} color="#FFFFFF" />
+            </View>
+            <ThemedText type="body" style={styles.promoText}>
+              Watch this space for special promotions and events
+            </ThemedText>
+          </View>
         </View>
 
         {isTop ? (
@@ -410,6 +421,26 @@ const styles = StyleSheet.create({
   swipeLabelContainer: {
     alignItems: "center",
     gap: 2,
+  },
+  promoBanner: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    alignItems: "center",
+  },
+  promoIconRow: {
+    flexDirection: "row",
+    gap: 4,
+    marginBottom: 6,
+  },
+  promoText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 15,
+    textAlign: "center",
+    letterSpacing: 0.3,
   },
   skipButton: {
     marginTop: Spacing.lg,
