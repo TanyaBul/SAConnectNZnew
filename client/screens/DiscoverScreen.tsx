@@ -16,10 +16,10 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
-import { getFamilies, getConnections, addConnection, updateConnectionStatus, getThreads, Family, Connection, MessageThread } from "@/lib/storage";
+import { getFamilies, getConnections, addConnection, updateConnectionStatus, getOrCreateThread, getThreads, Family, Connection, MessageThread } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
-type TabType = "families" | "pending" | "messages";
+type TabType = "families" | "connected" | "pending" | "messages";
 
 export default function DiscoverScreen() {
   const { theme } = useTheme();
@@ -121,7 +121,27 @@ export default function DiscoverScreen() {
     c => c.status === "pending" && c.targetUserId === user?.id
   );
 
+  const connectedFamilies = connections.filter(
+    c => c.status === "connected" && (c as any).otherUser
+  );
+
   const unreadMessagesCount = threads.reduce((acc, t) => acc + t.unreadCount, 0);
+
+  const handleMessageFromDiscover = async (otherUser: any) => {
+    if (!user?.id || !otherUser) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const thread = await getOrCreateThread(user.id, otherUser.id);
+      if (thread) {
+        navigation.navigate("Chat", {
+          threadId: thread.id,
+          family: { id: otherUser.id, familyName: otherUser.familyName, avatarUrl: otherUser.avatarUrl } as any,
+        });
+      }
+    } catch (error) {
+      console.error("Error starting message:", error);
+    }
+  };
 
   const renderFamilyItem = ({ item }: { item: Family }) => {
     const status = getConnectionStatus(item.id);
@@ -143,21 +163,17 @@ export default function DiscoverScreen() {
   };
 
   const renderPendingItem = ({ item }: { item: Connection }) => {
-    const family = families.find(f => f.id === item.userId) || {
-      id: item.userId,
-      familyName: "Unknown Family",
-      avatarUrl: null,
-      bio: "",
-      interests: [],
-    };
+    const otherUser = (item as any).otherUser;
+    const familyName = otherUser?.familyName || "Unknown Family";
+    const avatarUrl = otherUser?.avatarUrl || null;
     
     return (
       <View style={[styles.pendingCard, { backgroundColor: theme.backgroundDefault, ...Shadows.card }]}>
         <View style={styles.pendingHeader}>
-          <Avatar uri={family.avatarUrl} size="medium" />
+          <Avatar uri={avatarUrl} size="medium" />
           <View style={styles.pendingInfo}>
             <ThemedText type="heading" numberOfLines={1}>
-              {family.familyName}
+              {familyName}
             </ThemedText>
             <ThemedText type="caption" style={{ color: theme.textSecondary }}>
               Wants to connect with you
@@ -313,6 +329,35 @@ export default function DiscoverScreen() {
             <Pressable
               style={[
                 styles.tab,
+                activeTab === "connected" && { backgroundColor: theme.backgroundDefault },
+              ]}
+              onPress={() => setActiveTab("connected")}
+            >
+              <Feather 
+                name="heart" 
+                size={16} 
+                color={activeTab === "connected" ? theme.primary : theme.textSecondary} 
+              />
+              <ThemedText
+                type="caption"
+                style={[
+                  styles.tabText,
+                  { color: activeTab === "connected" ? theme.primary : theme.textSecondary },
+                ]}
+              >
+                Connected
+              </ThemedText>
+              {connectedFamilies.length > 0 ? (
+                <View style={[styles.tabBadge, { backgroundColor: theme.success }]}>
+                  <ThemedText type="small" style={{ color: "#fff", fontWeight: "600", fontSize: 10 }}>
+                    {connectedFamilies.length}
+                  </ThemedText>
+                </View>
+              ) : null}
+            </Pressable>
+            <Pressable
+              style={[
+                styles.tab,
                 activeTab === "pending" && { backgroundColor: theme.backgroundDefault },
               ]}
               onPress={() => setActiveTab("pending")}
@@ -383,6 +428,55 @@ export default function DiscoverScreen() {
               image="discover"
               title="No Families Nearby Yet"
               description="Be the first to join! Once more SA families sign up in your area, they'll appear here."
+            />
+          )
+        ) : null}
+
+        {activeTab === "connected" ? (
+          connectedFamilies.length > 0 ? (
+            connectedFamilies.map((conn) => {
+              const otherUser = (conn as any).otherUser;
+              if (!otherUser) return null;
+              return (
+                <View key={conn.id} style={styles.cardWrapper}>
+                  <View style={[styles.connectedCard, { backgroundColor: theme.backgroundDefault, ...Shadows.card }]}>
+                    <Pressable
+                      style={styles.connectedInfo}
+                      onPress={() =>
+                        navigation.navigate("FamilyDetail", {
+                          family: {
+                            id: otherUser.id,
+                            familyName: otherUser.familyName,
+                            avatarUrl: otherUser.avatarUrl,
+                          } as any,
+                        })
+                      }
+                    >
+                      <Avatar uri={otherUser.avatarUrl} size="medium" />
+                      <View style={styles.connectedDetails}>
+                        <ThemedText type="body" style={{ fontWeight: "600" }} numberOfLines={1}>
+                          {otherUser.familyName}
+                        </ThemedText>
+                        <ThemedText type="caption" style={{ color: theme.success }}>
+                          Connected
+                        </ThemedText>
+                      </View>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.connectedMessageBtn, { backgroundColor: theme.primary + "15" }]}
+                      onPress={() => handleMessageFromDiscover(otherUser)}
+                    >
+                      <Feather name="message-circle" size={20} color={theme.primary} />
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            })
+          ) : (
+            <EmptyState
+              image="discover"
+              title="No Connections Yet"
+              description="When you connect with other SA families, they'll appear here for easy messaging."
             />
           )
         ) : null}
@@ -527,6 +621,30 @@ const styles = StyleSheet.create({
   acceptButton: {
     flex: 1,
     height: 44,
+  },
+  connectedCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+  },
+  connectedInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  connectedDetails: {
+    marginLeft: Spacing.md,
+    flex: 1,
+  },
+  connectedMessageBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
   },
   messageCard: {
     flexDirection: "row",
