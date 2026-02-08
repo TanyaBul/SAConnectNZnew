@@ -116,6 +116,10 @@ All data persists server-side - no more demo/sample data.
 - Admin Dashboard restricted to saconnectnz@gmail.com only
   - Client-side: Admin section only visible to admin email in Settings
   - Server-side: Admin API endpoints verify email header for authorization
+- Account deletion (App Store compliant)
+  - Two-step confirmation in Settings before deletion
+  - DELETE /api/users/:id endpoint removes user and all related data (cascade)
+  - Deletes: family members, connections, messages, threads, events, businesses, blocks, reports, tokens
 - Added block/report user functionality
   - Users can block families (removes them from Discover feed)
   - Users can report inappropriate behavior with reason selection
