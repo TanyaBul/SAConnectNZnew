@@ -35,7 +35,7 @@ export default function WelcomeScreen() {
         
         <View style={styles.textContent}>
           <ThemedText type="h2" style={styles.title}>
-            Find Your SA Family in New Zealand
+            Connect With Other SA Families in New Zealand
           </ThemedText>
           <ThemedText
             type="body"
