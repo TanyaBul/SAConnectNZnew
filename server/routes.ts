@@ -80,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             "api-key": process.env.BREVO_API_KEY || "",
           },
           body: JSON.stringify({
-            sender: { name: "SA Connect NZ", email: "noreply@saconnectnz.com" },
+            sender: { name: "SA Connect NZ", email: "saconnectnz@gmail.com" },
             to: [{ email: email }],
             subject: "Your Password Reset Code - SA Connect NZ",
             htmlContent: `
@@ -109,7 +109,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (!brevoResponse.ok) {
           const errBody = await brevoResponse.text();
-          console.error("Brevo email error:", errBody);
+          console.error("Brevo email error:", brevoResponse.status, errBody);
+        } else {
+          console.log("Reset email sent successfully to:", email);
         }
       } catch (emailError) {
         console.error("Failed to send reset email:", emailError);
