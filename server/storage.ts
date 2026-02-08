@@ -57,6 +57,13 @@ export interface IStorage {
   createWelcomeCard(data: Omit<schema.WelcomeCard, "id" | "createdAt" | "updatedAt">): Promise<schema.WelcomeCard>;
   updateWelcomeCard(id: string, data: Partial<Omit<schema.WelcomeCard, "id" | "createdAt">>): Promise<schema.WelcomeCard | undefined>;
   deleteWelcomeCard(id: string): Promise<void>;
+
+  getBusinesses(): Promise<(schema.Business & { user: schema.User })[]>;
+  getBusinessById(id: string): Promise<(schema.Business & { user: schema.User }) | undefined>;
+  getUserBusinesses(userId: string): Promise<schema.Business[]>;
+  createBusiness(userId: string, data: Omit<schema.Business, "id" | "userId" | "createdAt">): Promise<schema.Business>;
+  updateBusiness(id: string, data: Partial<Omit<schema.Business, "id" | "userId" | "createdAt">>): Promise<schema.Business | undefined>;
+  deleteBusiness(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -513,6 +520,52 @@ export class DatabaseStorage implements IStorage {
 
   async deleteWelcomeCard(id: string): Promise<void> {
     await db.delete(schema.welcomeCards).where(eq(schema.welcomeCards.id, id));
+  }
+
+  async getBusinesses(): Promise<(schema.Business & { user: schema.User })[]> {
+    const allBusinesses = await db.select().from(schema.businesses)
+      .where(eq(schema.businesses.active, true))
+      .orderBy(desc(schema.businesses.createdAt));
+    
+    const results = [];
+    for (const biz of allBusinesses) {
+      const [user] = await db.select().from(schema.users).where(eq(schema.users.id, biz.userId));
+      if (user) {
+        results.push({ ...biz, user });
+      }
+    }
+    return results;
+  }
+
+  async getBusinessById(id: string): Promise<(schema.Business & { user: schema.User }) | undefined> {
+    const [biz] = await db.select().from(schema.businesses).where(eq(schema.businesses.id, id));
+    if (!biz) return undefined;
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.id, biz.userId));
+    if (!user) return undefined;
+    return { ...biz, user };
+  }
+
+  async getUserBusinesses(userId: string): Promise<schema.Business[]> {
+    return db.select().from(schema.businesses)
+      .where(eq(schema.businesses.userId, userId))
+      .orderBy(desc(schema.businesses.createdAt));
+  }
+
+  async createBusiness(userId: string, data: Omit<schema.Business, "id" | "userId" | "createdAt">): Promise<schema.Business> {
+    const [biz] = await db.insert(schema.businesses).values({ ...data, userId }).returning();
+    return biz;
+  }
+
+  async updateBusiness(id: string, data: Partial<Omit<schema.Business, "id" | "userId" | "createdAt">>): Promise<schema.Business | undefined> {
+    const [biz] = await db.update(schema.businesses)
+      .set(data)
+      .where(eq(schema.businesses.id, id))
+      .returning();
+    return biz;
+  }
+
+  async deleteBusiness(id: string): Promise<void> {
+    await db.delete(schema.businesses).where(eq(schema.businesses.id, id));
   }
 }
 

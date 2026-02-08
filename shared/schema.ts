@@ -197,6 +197,32 @@ export const welcomeCards = pgTable("welcome_cards", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const businesses = pgTable("businesses", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(),
+  location: text("location"),
+  phone: text("phone"),
+  email: text("email"),
+  website: text("website"),
+  logoUrl: text("logo_url"),
+  promotion: text("promotion"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertBusinessSchema = createInsertSchema(businesses).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+});
+
 export const insertBlockSchema = z.object({
   blockedUserId: z.string(),
 });
@@ -219,3 +245,4 @@ export type UserReport = typeof userReports.$inferSelect;
 export type EventAttendee = typeof eventAttendees.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type WelcomeCard = typeof welcomeCards.$inferSelect;
+export type Business = typeof businesses.$inferSelect;

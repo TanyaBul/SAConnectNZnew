@@ -622,11 +622,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/businesses", async (_req: Request, res: Response) => {
+    try {
+      const businesses = await storage.getBusinesses();
+      res.json(businesses.map((b) => ({
+        ...b,
+        user: sanitizeUser(b.user),
+      })));
+    } catch (error) {
+      console.error("Get businesses error:", error);
+      res.status(500).json({ error: "Failed to get businesses" });
+    }
+  });
+
+  app.get("/api/businesses/:id", async (req: Request, res: Response) => {
+    try {
+      const business = await storage.getBusinessById(req.params.id);
+      if (!business) {
+        return res.status(404).json({ error: "Business not found" });
+      }
+      res.json({ ...business, user: sanitizeUser(business.user) });
+    } catch (error) {
+      console.error("Get business error:", error);
+      res.status(500).json({ error: "Failed to get business" });
+    }
+  });
+
+  app.get("/api/users/:userId/businesses", async (req: Request, res: Response) => {
+    try {
+      const businesses = await storage.getUserBusinesses(req.params.userId);
+      res.json(businesses);
+    } catch (error) {
+      console.error("Get user businesses error:", error);
+      res.status(500).json({ error: "Failed to get user businesses" });
+    }
+  });
+
+  app.post("/api/businesses", async (req: Request, res: Response) => {
+    try {
+      const { userId, name, description, category, location, phone, email, website, logoUrl, promotion } = req.body;
+      if (!userId || !name || !category) {
+        return res.status(400).json({ error: "User ID, name, and category are required" });
+      }
+
+      let savedLogoUrl = logoUrl;
+      if (logoUrl && logoUrl.startsWith("data:image")) {
+        savedLogoUrl = saveBase64Image(logoUrl, "business-logos");
+      }
+
+      const business = await storage.createBusiness(userId, {
+        name, description, category, location, phone, email, website,
+        logoUrl: savedLogoUrl, promotion, active: true,
+      });
+      res.json(business);
+    } catch (error) {
+      console.error("Create business error:", error);
+      res.status(500).json({ error: "Failed to create business" });
+    }
+  });
+
+  app.put("/api/businesses/:id", async (req: Request, res: Response) => {
+    try {
+      const { name, description, category, location, phone, email, website, logoUrl, promotion, active } = req.body;
+
+      let savedLogoUrl = logoUrl;
+      if (logoUrl && logoUrl.startsWith("data:image")) {
+        savedLogoUrl = saveBase64Image(logoUrl, "business-logos");
+      }
+
+      const business = await storage.updateBusiness(req.params.id, {
+        name, description, category, location, phone, email, website,
+        logoUrl: savedLogoUrl, promotion, active,
+      });
+      if (!business) {
+        return res.status(404).json({ error: "Business not found" });
+      }
+      res.json(business);
+    } catch (error) {
+      console.error("Update business error:", error);
+      res.status(500).json({ error: "Failed to update business" });
+    }
+  });
+
+  app.delete("/api/businesses/:id", async (req: Request, res: Response) => {
+    try {
+      await storage.deleteBusiness(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete business error:", error);
+      res.status(500).json({ error: "Failed to delete business" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
 
-function saveBase64Image(base64String: string): string {
+function saveBase64Image(base64String: string, subDir: string = "welcome-cards"): string {
   const matches = base64String.match(/^data:image\/([\w+]+);base64,(.+)$/);
   if (!matches) {
     throw new Error("Invalid base64 image string");
@@ -634,8 +726,9 @@ function saveBase64Image(base64String: string): string {
 
   const ext = matches[1] === "jpeg" ? "jpg" : matches[1];
   const data = matches[2];
-  const filename = `card-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
-  const uploadsDir = path.resolve(process.cwd(), "uploads", "welcome-cards");
+  const prefix = subDir === "welcome-cards" ? "card" : "biz";
+  const filename = `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+  const uploadsDir = path.resolve(process.cwd(), "uploads", subDir);
 
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
@@ -644,5 +737,5 @@ function saveBase64Image(base64String: string): string {
   const filePath = path.join(uploadsDir, filename);
   fs.writeFileSync(filePath, Buffer.from(data, "base64"));
 
-  return `/uploads/welcome-cards/${filename}`;
+  return `/uploads/${subDir}/${filename}`;
 }
