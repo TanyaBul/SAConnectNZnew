@@ -7,6 +7,7 @@ import { Platform, StyleSheet, View } from "react-native";
 import DiscoverStackNavigator from "@/navigation/DiscoverStackNavigator";
 import MessagesStackNavigator from "@/navigation/MessagesStackNavigator";
 import EventsStackNavigator from "@/navigation/EventsStackNavigator";
+import BusinessStackNavigator from "@/navigation/BusinessStackNavigator";
 import ProfileStackNavigator from "@/navigation/ProfileStackNavigator";
 import { WelcomeCards } from "@/components/WelcomeCards";
 import { useTheme } from "@/hooks/useTheme";
@@ -16,6 +17,7 @@ export type MainTabParamList = {
   DiscoverTab: undefined;
   MessagesTab: undefined;
   EventsTab: undefined;
+  BusinessTab: undefined;
   ProfileTab: undefined;
 };
 
@@ -79,6 +81,16 @@ export default function MainTabNavigator() {
           title: "Events",
           tabBarIcon: ({ color, size }) => (
             <Feather name="calendar" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="BusinessTab"
+        component={BusinessStackNavigator}
+        options={{
+          title: "Business",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="briefcase" size={size} color={color} />
           ),
         }}
       />

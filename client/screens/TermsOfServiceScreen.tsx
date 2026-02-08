@@ -203,7 +203,37 @@ export default function TermsOfServiceScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
           <ThemedText type="heading" style={styles.sectionTitle}>
-            9. Intellectual Property
+            9. Business Hub Listings
+          </ThemedText>
+          <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
+            SA Connect NZ provides a free Business Hub where users may list their businesses, side hustles, or home enterprises. By listing a business, you agree to the following:
+          </ThemedText>
+          <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
+            {"\u2022"} You are solely responsible for the accuracy and legality of your business listing, including descriptions, promotions, and contact information
+          </ThemedText>
+          <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
+            {"\u2022"} SA Connect NZ does not verify, endorse, or guarantee any businesses listed on the platform
+          </ThemedText>
+          <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
+            {"\u2022"} Business listings must comply with all applicable New Zealand laws and regulations
+          </ThemedText>
+          <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
+            {"\u2022"} Any transactions between users and listed businesses are conducted entirely at the parties' own risk
+          </ThemedText>
+          <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
+            {"\u2022"} SA Connect NZ is not liable for any losses, damages, or disputes arising from interactions with listed businesses
+          </ThemedText>
+          <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
+            {"\u2022"} We reserve the right to remove any business listing that violates these Terms or is deemed inappropriate, without prior notice
+          </ThemedText>
+          <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
+            {"\u2022"} Business listings must not contain misleading claims, prohibited products or services, or content that could harm the community
+          </ThemedText>
+        </View>
+
+        <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
+          <ThemedText type="heading" style={styles.sectionTitle}>
+            10. Intellectual Property
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
             The App and its original content, features, and functionality are owned by SA Connect NZ and are protected by international copyright, trademark, and other intellectual property laws.
@@ -215,7 +245,7 @@ export default function TermsOfServiceScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
           <ThemedText type="heading" style={styles.sectionTitle}>
-            10. Account Termination
+            11. Account Termination
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
             We reserve the right to suspend or terminate your account at any time, with or without notice, for any reason, including but not limited to:
@@ -236,7 +266,7 @@ export default function TermsOfServiceScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
           <ThemedText type="heading" style={styles.sectionTitle}>
-            11. Disclaimers
+            12. Disclaimers
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
             THE APP IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. WE DO NOT GUARANTEE THAT THE APP WILL BE UNINTERRUPTED, SECURE, OR ERROR-FREE.
@@ -248,7 +278,7 @@ export default function TermsOfServiceScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
           <ThemedText type="heading" style={styles.sectionTitle}>
-            12. Limitation of Liability
+            13. Limitation of Liability
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
             TO THE MAXIMUM EXTENT PERMITTED BY LAW, SA CONNECT NZ SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THE APP.
@@ -260,7 +290,7 @@ export default function TermsOfServiceScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
           <ThemedText type="heading" style={styles.sectionTitle}>
-            13. Indemnification
+            14. Indemnification
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
             You agree to indemnify and hold harmless SA Connect NZ, its officers, directors, employees, and agents from any claims, damages, losses, or expenses arising from your use of the App or violation of these Terms.
@@ -269,7 +299,7 @@ export default function TermsOfServiceScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
           <ThemedText type="heading" style={styles.sectionTitle}>
-            14. Governing Law
+            15. Governing Law
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
             These Terms shall be governed by and construed in accordance with the laws of New Zealand. Any disputes arising from these Terms or your use of the App shall be subject to the exclusive jurisdiction of the courts of New Zealand.
@@ -278,7 +308,7 @@ export default function TermsOfServiceScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
           <ThemedText type="heading" style={styles.sectionTitle}>
-            15. Changes to Terms
+            16. Changes to Terms
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
             We may modify these Terms at any time. We will notify you of any material changes by posting the updated Terms in the App. Your continued use of the App after such changes constitutes acceptance of the new Terms.
@@ -287,7 +317,7 @@ export default function TermsOfServiceScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
           <ThemedText type="heading" style={styles.sectionTitle}>
-            16. Contact Us
+            17. Contact Us
           </ThemedText>
           <ThemedText type="body" style={[styles.paragraph, { color: theme.textSecondary }]}>
             If you have questions about these Terms of Service, please contact us at:

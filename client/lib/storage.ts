@@ -61,6 +61,38 @@ export interface Event {
   attendees: string[];
 }
 
+export interface Business {
+  id: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  category: string;
+  location: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  logoUrl: string | null;
+  promotion: string | null;
+  active: boolean;
+  createdAt: string;
+  user?: Family;
+}
+
+export const BUSINESS_CATEGORIES = [
+  "Food & Baking",
+  "Beauty & Wellness",
+  "Home Services",
+  "Health & Fitness",
+  "Education & Tutoring",
+  "Childcare",
+  "Events & Entertainment",
+  "Arts & Crafts",
+  "Professional Services",
+  "Retail",
+  "Transport",
+  "Other",
+];
+
 const STORAGE_KEYS = {
   ONBOARDED: "@sa_connect_onboarded",
 };
@@ -377,6 +409,82 @@ export async function reportUser(
     return response.ok;
   } catch (error) {
     console.error("Error reporting user:", error);
+    return false;
+  }
+}
+
+export async function getBusinesses(): Promise<Business[]> {
+  try {
+    const response = await fetch(new URL("/api/businesses", getApiUrl()).toString());
+    if (!response.ok) return [];
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching businesses:", error);
+    return [];
+  }
+}
+
+export async function getBusinessById(id: string): Promise<Business | null> {
+  try {
+    const response = await fetch(new URL(`/api/businesses/${id}`, getApiUrl()).toString());
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching business:", error);
+    return null;
+  }
+}
+
+export async function createBusiness(
+  userId: string,
+  data: {
+    name: string;
+    description?: string;
+    category: string;
+    location?: string;
+    phone?: string;
+    email?: string;
+    website?: string;
+    logoUrl?: string;
+    promotion?: string;
+  }
+): Promise<Business | null> {
+  try {
+    const response = await apiRequest("POST", "/api/businesses", { userId, ...data });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Error creating business:", error);
+    return null;
+  }
+}
+
+export async function updateBusiness(
+  id: string,
+  data: Partial<Business>
+): Promise<Business | null> {
+  try {
+    const response = await fetch(new URL(`/api/businesses/${id}`, getApiUrl()).toString(), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating business:", error);
+    return null;
+  }
+}
+
+export async function deleteBusiness(id: string): Promise<boolean> {
+  try {
+    const response = await fetch(new URL(`/api/businesses/${id}`, getApiUrl()).toString(), {
+      method: "DELETE",
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error deleting business:", error);
     return false;
   }
 }
