@@ -155,7 +155,7 @@ export default function EditProfileScreen() {
           type="small"
           style={{ color: theme.textSecondary, marginTop: -Spacing.md, marginBottom: Spacing.lg, fontStyle: "italic" }}
         >
-          Please avoid sharing personal details such as home address, phone number, or children's full names.
+          Please avoid sharing personal details and sensitive information such as bank details.
         </ThemedText>
 
         <ThemedText type="heading" style={styles.sectionTitle}>
