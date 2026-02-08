@@ -342,26 +342,24 @@ export default function BusinessHubScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <Pressable
+        style={[styles.pinnedBanner, { backgroundColor: theme.primary + "12", borderColor: theme.primary + "30", marginTop: headerHeight + Spacing.sm }]}
+        onPress={() => setModalVisible(true)}
+      >
+        <Feather name="briefcase" size={18} color={theme.primary} />
+        <ThemedText type="small" style={{ color: theme.primary, fontWeight: "600", flex: 1, marginLeft: Spacing.sm }}>
+          List your business for free to the SA community!
+        </ThemedText>
+        <Feather name="chevron-right" size={16} color={theme.primary} />
+      </Pressable>
       <FlatList
         data={businesses}
         keyExtractor={(item) => item.id}
         renderItem={renderBusiness}
-        ListHeaderComponent={
-          <Pressable
-            style={[styles.pinnedBanner, { backgroundColor: theme.primary + "12", borderColor: theme.primary + "30" }]}
-            onPress={() => setModalVisible(true)}
-          >
-            <Feather name="briefcase" size={18} color={theme.primary} />
-            <ThemedText type="small" style={{ color: theme.primary, fontWeight: "600", flex: 1, marginLeft: Spacing.sm }}>
-              List your business for free to the SA community!
-            </ThemedText>
-            <Feather name="chevron-right" size={16} color={theme.primary} />
-          </Pressable>
-        }
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: headerHeight + Spacing.lg,
+            paddingTop: Spacing.md,
             paddingBottom: tabBarHeight + Spacing.lg,
           },
           businesses.length === 0 && styles.emptyList,
@@ -534,7 +532,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    marginBottom: Spacing.lg,
+    marginHorizontal: Spacing.lg,
   },
   bizCard: {
     borderRadius: BorderRadius.md,
