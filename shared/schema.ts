@@ -179,6 +179,24 @@ export const insertEventSchema = createInsertSchema(events).omit({
   createdAt: true,
 });
 
+export const welcomeCards = pgTable("welcome_cards", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  sortOrder: integer("sort_order").notNull().default(0),
+  icon: text("icon").notNull().default("heart"),
+  header: text("header").notNull(),
+  title: text("title").notNull(),
+  bullets: text("bullets").array().notNull(),
+  accentColor: text("accent_color").notNull().default("#E8703A"),
+  borderColor: text("border_color").notNull().default("#E8703A"),
+  promoText: text("promo_text").notNull().default("Watch this space for special promotions and events"),
+  imageUrl: text("image_url"),
+  active: boolean("active").default(true),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertBlockSchema = z.object({
   blockedUserId: z.string(),
 });
@@ -200,3 +218,4 @@ export type UserBlock = typeof userBlocks.$inferSelect;
 export type UserReport = typeof userReports.$inferSelect;
 export type EventAttendee = typeof eventAttendees.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type WelcomeCard = typeof welcomeCards.$inferSelect;
