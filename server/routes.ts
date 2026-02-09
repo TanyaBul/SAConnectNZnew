@@ -169,7 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:id", async (req: Request, res: Response) => {
     try {
-      const user = await storage.getUserById(req.params.id);
+      const user = await storage.getUserById(req.params.id as string);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -187,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updates.avatarUrl && updates.avatarUrl.startsWith("data:image")) {
         updates.avatarUrl = saveBase64Image(updates.avatarUrl, "avatars");
       }
-      const user = await storage.updateUser(req.params.id, updates);
+      const user = await storage.updateUser(req.params.id as string, updates);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -201,7 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/users/:id", async (req: Request, res: Response) => {
     try {
-      const deleted = await storage.deleteUser(req.params.id);
+      const deleted = await storage.deleteUser(req.params.id as string);
       if (!deleted) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -214,7 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:userId/family-members", async (req: Request, res: Response) => {
     try {
-      const members = await storage.getFamilyMembers(req.params.userId);
+      const members = await storage.getFamilyMembers(req.params.userId as string);
       res.json(members);
     } catch (error) {
       console.error("Get family members error:", error);
@@ -228,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!name || age === undefined) {
         return res.status(400).json({ error: "Name and age are required" });
       }
-      const member = await storage.addFamilyMember(req.params.userId, name, age);
+      const member = await storage.addFamilyMember(req.params.userId as string, name, age);
       res.json(member);
     } catch (error) {
       console.error("Add family member error:", error);
@@ -239,7 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/family-members/:id", async (req: Request, res: Response) => {
     try {
       const { name, age } = req.body;
-      const member = await storage.updateFamilyMember(req.params.id, name, age);
+      const member = await storage.updateFamilyMember(req.params.id as string, name, age);
       if (!member) {
         return res.status(404).json({ error: "Family member not found" });
       }
@@ -252,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/family-members/:id", async (req: Request, res: Response) => {
     try {
-      await storage.deleteFamilyMember(req.params.id);
+      await storage.deleteFamilyMember(req.params.id as string);
       res.json({ success: true });
     } catch (error) {
       console.error("Delete family member error:", error);
@@ -262,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/discover/:userId", async (req: Request, res: Response) => {
     try {
-      const families = await storage.getDiscoverFamilies(req.params.userId);
+      const families = await storage.getDiscoverFamilies(req.params.userId as string);
       res.json(families.map(sanitizeUser));
     } catch (error) {
       console.error("Discover error:", error);
@@ -272,10 +272,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/connections/:userId", async (req: Request, res: Response) => {
     try {
-      const connections = await storage.getConnections(req.params.userId);
+      const connections = await storage.getConnections(req.params.userId as string);
       const enriched = await Promise.all(
         connections.map(async (c) => {
-          const otherUserId = c.userId === req.params.userId ? c.targetUserId : c.userId;
+          const otherUserId = c.userId === (req.params.userId as string) ? c.targetUserId : c.userId;
           const otherUser = await storage.getUserById(otherUserId);
           return {
             ...c,
@@ -313,7 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/connections/:id", async (req: Request, res: Response) => {
     try {
       const { status } = req.body;
-      const connection = await storage.updateConnectionStatus(req.params.id, status);
+      const connection = await storage.updateConnectionStatus(req.params.id as string, status);
       if (!connection) {
         return res.status(404).json({ error: "Connection not found" });
       }
@@ -326,7 +326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/threads/:userId", async (req: Request, res: Response) => {
     try {
-      const threads = await storage.getThreads(req.params.userId);
+      const threads = await storage.getThreads(req.params.userId as string);
       res.json(threads.map((t) => ({
         ...t,
         otherUser: sanitizeUser(t.otherUser),
@@ -353,7 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/messages/:threadId", async (req: Request, res: Response) => {
     try {
-      const messages = await storage.getMessages(req.params.threadId);
+      const messages = await storage.getMessages(req.params.threadId as string);
       res.json(messages);
     } catch (error) {
       console.error("Get messages error:", error);
@@ -381,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) {
         return res.status(400).json({ error: "userId is required" });
       }
-      await storage.markThreadAsRead(req.params.threadId, userId);
+      await storage.markThreadAsRead(req.params.threadId as string, userId);
       res.json({ success: true });
     } catch (error) {
       console.error("Mark thread read error:", error);
@@ -420,7 +420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/events/:eventId", async (req: Request, res: Response) => {
     try {
       const { title, description, date, time, location, category } = req.body;
-      const event = await storage.updateEvent(req.params.eventId, { title, description, date, time, location, category });
+      const event = await storage.updateEvent(req.params.eventId as string, { title, description, date, time, location, category });
       if (!event) {
         return res.status(404).json({ error: "Event not found" });
       }
@@ -433,7 +433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/events/:eventId", async (req: Request, res: Response) => {
     try {
-      await storage.deleteEvent(req.params.eventId);
+      await storage.deleteEvent(req.params.eventId as string);
       res.json({ success: true });
     } catch (error) {
       console.error("Delete event error:", error);
@@ -443,7 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/events/:eventId/attend", async (req: Request, res: Response) => {
     try {
-      const { eventId } = req.params;
+      const eventId = req.params.eventId as string;
       const { userId } = req.body;
       
       if (!userId) {
@@ -460,7 +460,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/events/:eventId/attend/:userId", async (req: Request, res: Response) => {
     try {
-      const { eventId, userId } = req.params;
+      const eventId = req.params.eventId as string;
+      const userId = req.params.userId as string;
       await storage.removeEventAttendee(eventId, userId);
       res.json({ success: true });
     } catch (error) {
@@ -471,7 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/events/:eventId/attendees", async (req: Request, res: Response) => {
     try {
-      const attendees = await storage.getEventAttendees(req.params.eventId);
+      const attendees = await storage.getEventAttendees(req.params.eventId as string);
       res.json(attendees);
     } catch (error) {
       console.error("Get attendees error:", error);
@@ -481,7 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/users/:userId/block", async (req: Request, res: Response) => {
     try {
-      const { userId } = req.params;
+      const userId = req.params.userId as string;
       const { blockedUserId } = req.body;
       
       if (!blockedUserId) {
@@ -498,7 +499,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/users/:userId/block/:blockedUserId", async (req: Request, res: Response) => {
     try {
-      const { userId, blockedUserId } = req.params;
+      const userId = req.params.userId as string;
+      const blockedUserId = req.params.blockedUserId as string;
       await storage.unblockUser(userId, blockedUserId);
       res.json({ success: true });
     } catch (error) {
@@ -509,7 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:userId/blocked", async (req: Request, res: Response) => {
     try {
-      const { userId } = req.params;
+      const userId = req.params.userId as string;
       const blockedIds = await storage.getBlockedUsers(userId);
       res.json(blockedIds);
     } catch (error) {
@@ -562,7 +564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Unauthorized" });
       }
       
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { status } = req.body;
       
       if (!status) {
@@ -672,7 +674,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Unauthorised" });
       }
 
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { header, title, bullets, icon, accentColor, borderColor, promoText, imageBase64, sortOrder, active } = req.body;
 
       const updates: any = {};
@@ -709,7 +711,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Unauthorised" });
       }
 
-      await storage.deleteWelcomeCard(req.params.id);
+      await storage.deleteWelcomeCard(req.params.id as string);
       res.json({ success: true });
     } catch (error) {
       console.error("Delete welcome card error:", error);
@@ -732,7 +734,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/businesses/:id", async (req: Request, res: Response) => {
     try {
-      const business = await storage.getBusinessById(req.params.id);
+      const business = await storage.getBusinessById(req.params.id as string);
       if (!business) {
         return res.status(404).json({ error: "Business not found" });
       }
@@ -745,7 +747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:userId/businesses", async (req: Request, res: Response) => {
     try {
-      const businesses = await storage.getUserBusinesses(req.params.userId);
+      const businesses = await storage.getUserBusinesses(req.params.userId as string);
       res.json(businesses);
     } catch (error) {
       console.error("Get user businesses error:", error);
@@ -785,7 +787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         savedLogoUrl = saveBase64Image(logoUrl, "business-logos");
       }
 
-      const business = await storage.updateBusiness(req.params.id, {
+      const business = await storage.updateBusiness(req.params.id as string, {
         name, description, category, location, phone, email, website,
         logoUrl: savedLogoUrl, promotion, active,
       });
@@ -801,7 +803,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/businesses/:id", async (req: Request, res: Response) => {
     try {
-      await storage.deleteBusiness(req.params.id);
+      await storage.deleteBusiness(req.params.id as string);
       res.json({ success: true });
     } catch (error) {
       console.error("Delete business error:", error);
