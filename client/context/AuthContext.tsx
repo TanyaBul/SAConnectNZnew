@@ -161,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
       if (updates.avatarUrl !== undefined) dbUpdates.avatarUrl = updates.avatarUrl;
       if (updates.interests !== undefined) dbUpdates.interests = updates.interests;
+      if (updates.familyMembers !== undefined) dbUpdates.familyMembers = updates.familyMembers;
       
       if (updates.location) {
         dbUpdates.suburb = updates.location.suburb;

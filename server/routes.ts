@@ -183,11 +183,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/users/:id", async (req: Request, res: Response) => {
     try {
-      const updates = { ...req.body };
+      const { familyMembers: incomingMembers, ...updates } = req.body;
       const user = await storage.updateUser(req.params.id as string, updates);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
+
+      if (Array.isArray(incomingMembers)) {
+        const existingMembers = await storage.getFamilyMembers(user.id);
+        for (const existing of existingMembers) {
+          await storage.deleteFamilyMember(existing.id);
+        }
+        for (const member of incomingMembers) {
+          if (member.name && member.name.trim()) {
+            await storage.addFamilyMember(user.id, member.name.trim(), member.age || 0);
+          }
+        }
+      }
+
       const familyMembers = await storage.getFamilyMembers(user.id);
       res.json({ ...sanitizeUser(user), familyMembers });
     } catch (error) {
