@@ -184,9 +184,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/:id", async (req: Request, res: Response) => {
     try {
       const updates = { ...req.body };
-      if (updates.avatarUrl && updates.avatarUrl.startsWith("data:image")) {
-        updates.avatarUrl = saveBase64Image(updates.avatarUrl, "avatars");
-      }
       const user = await storage.updateUser(req.params.id as string, updates);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
@@ -762,14 +759,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "User ID, name, and category are required" });
       }
 
-      let savedLogoUrl = logoUrl;
-      if (logoUrl && logoUrl.startsWith("data:image")) {
-        savedLogoUrl = saveBase64Image(logoUrl, "business-logos");
-      }
-
       const business = await storage.createBusiness(userId, {
         name, description, category, location, phone, email, website,
-        logoUrl: savedLogoUrl, promotion, active: true,
+        logoUrl: logoUrl || null, promotion, active: true,
       });
       res.json(business);
     } catch (error) {
@@ -782,14 +774,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { name, description, category, location, phone, email, website, logoUrl, promotion, active } = req.body;
 
-      let savedLogoUrl = logoUrl;
-      if (logoUrl && logoUrl.startsWith("data:image")) {
-        savedLogoUrl = saveBase64Image(logoUrl, "business-logos");
-      }
-
       const business = await storage.updateBusiness(req.params.id as string, {
         name, description, category, location, phone, email, website,
-        logoUrl: savedLogoUrl, promotion, active,
+        logoUrl: logoUrl || undefined, promotion, active,
       });
       if (!business) {
         return res.status(404).json({ error: "Business not found" });
