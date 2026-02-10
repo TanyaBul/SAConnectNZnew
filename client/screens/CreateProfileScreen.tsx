@@ -100,7 +100,7 @@ export default function CreateProfileScreen() {
     try {
       await updateProfile({
         bio,
-        avatarUrl: avatarBase64 || avatarUri || undefined,
+        avatarUrl: avatarBase64 || undefined,
         familyMembers: familyMembers.filter((m) => m.name.trim()),
         interests: selectedInterests,
       });

@@ -100,7 +100,7 @@ export default function EditProfileScreen() {
       await updateProfile({
         familyName,
         bio,
-        avatarUrl: avatarBase64 || avatarUri || undefined,
+        avatarUrl: avatarBase64 || (avatarUri && !avatarUri.startsWith("file://") ? avatarUri : undefined),
         familyMembers: familyMembers.filter((m) => m.name.trim()),
         interests: selectedInterests,
       });
