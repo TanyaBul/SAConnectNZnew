@@ -93,26 +93,14 @@ export default function BusinessHubScreen() {
     showImagePickerOptions(
       async () => {
         const result = await launchCamera();
-        if (result) {
-          const response = await fetch(result.uri);
-          const blob = await response.blob();
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            setLogoUrl(reader.result as string);
-          };
-          reader.readAsDataURL(blob);
+        if (result && result.base64) {
+          setLogoUrl(result.base64);
         }
       },
       async () => {
         const result = await launchImageLibrary();
-        if (result) {
-          const response = await fetch(result.uri);
-          const blob = await response.blob();
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            setLogoUrl(reader.result as string);
-          };
-          reader.readAsDataURL(blob);
+        if (result && result.base64) {
+          setLogoUrl(result.base64);
         }
       }
     );
@@ -273,26 +261,14 @@ export default function BusinessHubScreen() {
     showImagePickerOptions(
       async () => {
         const result = await launchCamera();
-        if (result) {
-          const response = await fetch(result.uri);
-          const blob = await response.blob();
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            setEditLogoUrl(reader.result as string);
-          };
-          reader.readAsDataURL(blob);
+        if (result && result.base64) {
+          setEditLogoUrl(result.base64);
         }
       },
       async () => {
         const result = await launchImageLibrary();
-        if (result) {
-          const response = await fetch(result.uri);
-          const blob = await response.blob();
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            setEditLogoUrl(reader.result as string);
-          };
-          reader.readAsDataURL(blob);
+        if (result && result.base64) {
+          setEditLogoUrl(result.base64);
         }
       }
     );
