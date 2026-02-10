@@ -157,13 +157,6 @@ export default function CreateProfileScreen() {
         >
           Optional - add names and ages (e.g., John 40)
         </ThemedText>
-        <View style={[styles.disclaimer, { backgroundColor: "#0D948815", borderColor: "#0D9488" }]}>
-          <Feather name="shield" size={16} color="#0D9488" style={styles.disclaimerIcon} />
-          <ThemedText type="small" style={{ color: theme.text, flex: 1 }}>
-            For your safety, only share first names. Never share personal details such as home addresses, phone numbers, or identifying information.
-          </ThemedText>
-        </View>
-
         {familyMembers.map((member) => (
           <View
             key={member.id}
@@ -388,18 +381,5 @@ const styles = StyleSheet.create({
   },
   button: {
     marginBottom: Spacing.md,
-  },
-  disclaimer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  disclaimerIcon: {
-    marginRight: Spacing.sm,
-    marginTop: 2,
   },
 });
