@@ -184,7 +184,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/:id", async (req: Request, res: Response) => {
     try {
       const { familyMembers: incomingMembers, ...updates } = req.body;
-      const user = await storage.updateUser(req.params.id as string, updates);
+      
+      let user;
+      if (Object.keys(updates).length > 0) {
+        user = await storage.updateUser(req.params.id as string, updates);
+      } else {
+        user = await storage.getUserById(req.params.id as string);
+      }
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
