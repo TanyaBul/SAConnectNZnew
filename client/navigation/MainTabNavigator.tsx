@@ -12,6 +12,7 @@ import ProfileStackNavigator from "@/navigation/ProfileStackNavigator";
 import { WelcomeCards } from "@/components/WelcomeCards";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import { useTabBadges } from "@/hooks/useTabBadges";
 
 export type MainTabParamList = {
   DiscoverTab: undefined;
@@ -23,9 +24,28 @@ export type MainTabParamList = {
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
+function TabIconWithBadge({ name, color, size, showBadge }: { name: keyof typeof Feather.glyphMap; color: string; size: number; showBadge: boolean }) {
+  return (
+    <View>
+      <Feather name={name} size={size} color={color} />
+      {showBadge ? (
+        <View style={styles.badge} />
+      ) : null}
+    </View>
+  );
+}
+
 export default function MainTabNavigator() {
   const { theme, isDark } = useTheme();
-  const { showWelcomeCards, dismissWelcomeCards } = useAuth();
+  const { user, showWelcomeCards, dismissWelcomeCards } = useAuth();
+  const {
+    hasUnreadMessages,
+    hasNewEvents,
+    hasNewBusinesses,
+    markEventsSeen,
+    markBusinessesSeen,
+    markMessagesSeen,
+  } = useTabBadges(user?.id);
 
   return (
     <View style={{ flex: 1 }}>
@@ -60,7 +80,7 @@ export default function MainTabNavigator() {
         options={{
           title: "Discover",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="compass" size={size} color={color} />
+            <TabIconWithBadge name="compass" color={color} size={size} showBadge={false} />
           ),
         }}
       />
@@ -70,8 +90,13 @@ export default function MainTabNavigator() {
         options={{
           title: "Messages",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="message-circle" size={size} color={color} />
+            <TabIconWithBadge name="message-circle" color={color} size={size} showBadge={hasUnreadMessages} />
           ),
+        }}
+        listeners={{
+          tabPress: () => {
+            markMessagesSeen();
+          },
         }}
       />
       <Tab.Screen
@@ -80,8 +105,13 @@ export default function MainTabNavigator() {
         options={{
           title: "Events",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="calendar" size={size} color={color} />
+            <TabIconWithBadge name="calendar" color={color} size={size} showBadge={hasNewEvents} />
           ),
+        }}
+        listeners={{
+          tabPress: () => {
+            markEventsSeen();
+          },
         }}
       />
       <Tab.Screen
@@ -90,8 +120,13 @@ export default function MainTabNavigator() {
         options={{
           title: "Business",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="briefcase" size={size} color={color} />
+            <TabIconWithBadge name="briefcase" color={color} size={size} showBadge={hasNewBusinesses} />
           ),
+        }}
+        listeners={{
+          tabPress: () => {
+            markBusinessesSeen();
+          },
         }}
       />
       <Tab.Screen
@@ -100,7 +135,7 @@ export default function MainTabNavigator() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="user" size={size} color={color} />
+            <TabIconWithBadge name="user" color={color} size={size} showBadge={false} />
           ),
         }}
       />
@@ -111,3 +146,17 @@ export default function MainTabNavigator() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  badge: {
+    position: "absolute",
+    top: -2,
+    right: -4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#16A34A",
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
+  },
+});
