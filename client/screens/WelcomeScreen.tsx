@@ -54,8 +54,8 @@ export default function WelcomeScreen() {
               text="Create a family profile with your members"
             />
             <FeatureBullet
-              icon="image"
-              text="Share photos privately with your network"
+              icon="briefcase"
+              text="Promote your small business to the SA community"
             />
             <FeatureBullet
               icon="message-circle"
