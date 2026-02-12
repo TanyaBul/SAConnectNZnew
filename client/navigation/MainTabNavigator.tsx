@@ -42,9 +42,11 @@ export default function MainTabNavigator() {
     hasUnreadMessages,
     hasNewEvents,
     hasNewBusinesses,
+    hasPendingRequests,
     markEventsSeen,
     markBusinessesSeen,
     markMessagesSeen,
+    markRequestsSeen,
   } = useTabBadges(user?.id);
 
   return (
@@ -80,8 +82,13 @@ export default function MainTabNavigator() {
         options={{
           title: "Discover",
           tabBarIcon: ({ color, size }) => (
-            <TabIconWithBadge name="compass" color={color} size={size} showBadge={false} />
+            <TabIconWithBadge name="compass" color={color} size={size} showBadge={hasPendingRequests} />
           ),
+        }}
+        listeners={{
+          tabPress: () => {
+            markRequestsSeen();
+          },
         }}
       />
       <Tab.Screen
