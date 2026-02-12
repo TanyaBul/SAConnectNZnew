@@ -1,9 +1,9 @@
-import React from "react";
-import { View, StyleSheet, ScrollView, Pressable } from "react-native";
+import React, { useState, useCallback } from "react";
+import { View, StyleSheet, ScrollView, Pressable, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 
@@ -22,7 +22,17 @@ export default function ProfileScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refreshUser();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshUser]);
 
   if (!user) {
     return (
@@ -43,6 +53,13 @@ export default function ProfileScreen() {
           },
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.primary}
+          />
+        }
       >
         <View style={styles.header}>
           <Avatar uri={user.avatarUrl} size="xlarge" showEditBadge onPress={() => {}} />

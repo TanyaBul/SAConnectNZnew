@@ -69,6 +69,13 @@ export default function EventsScreen() {
   const [editSaving, setEditSaving] = useState(false);
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredEvents = events.filter(e => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return e.title.toLowerCase().includes(q) || (e.description || '').toLowerCase().includes(q) || e.location.toLowerCase().includes(q) || e.category.toLowerCase().includes(q);
+  });
 
   const loadData = useCallback(async () => {
     try {
@@ -647,8 +654,24 @@ export default function EventsScreen() {
         </ThemedText>
         <Feather name="chevron-right" size={16} color={theme.primary} />
       </Pressable>
+      <View style={[styles.searchBar, { borderColor: theme.border, backgroundColor: theme.backgroundDefault }]}>
+        <Feather name="search" size={18} color={theme.textSecondary} />
+        <RNTextInput
+          style={[styles.searchInput, { color: theme.text, fontFamily: Typography.body.fontFamily }]}
+          placeholder="Search events..."
+          placeholderTextColor={theme.textSecondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          testID="input-search-events"
+        />
+        {searchQuery.length > 0 ? (
+          <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
+            <Feather name="x" size={18} color={theme.textSecondary} />
+          </Pressable>
+        ) : null}
+      </View>
       <FlatList
-        data={events}
+        data={filteredEvents}
         keyExtractor={(item) => item.id}
         renderItem={renderEvent}
         contentContainerStyle={[
@@ -1159,5 +1182,21 @@ const styles = StyleSheet.create({
   deleteConfirmButton: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 44,
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    height: "100%",
+    marginLeft: Spacing.sm,
   },
 });

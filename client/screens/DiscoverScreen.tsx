@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, Pressable, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -7,6 +7,7 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { FamilyCard } from "@/components/FamilyCard";
 import { Avatar } from "@/components/Avatar";
@@ -35,6 +36,7 @@ export default function DiscoverScreen() {
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showAvatarPrompt, setShowAvatarPrompt] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!user?.id) {
@@ -58,6 +60,16 @@ export default function DiscoverScreen() {
       setRefreshing(false);
     }
   }, [user?.id]);
+
+  useEffect(() => {
+    const checkAvatarPromptDismissed = async () => {
+      if (!user?.avatarUrl) {
+        const dismissed = await AsyncStorage.getItem('@sa_connect_avatar_prompt_dismissed');
+        setShowAvatarPrompt(!dismissed);
+      }
+    };
+    checkAvatarPromptDismissed();
+  }, [user?.avatarUrl]);
 
   useFocusEffect(
     useCallback(() => {
@@ -141,6 +153,11 @@ export default function DiscoverScreen() {
     } catch (error) {
       console.error("Error starting message:", error);
     }
+  };
+
+  const handleDismissAvatarPrompt = async () => {
+    await AsyncStorage.setItem('@sa_connect_avatar_prompt_dismissed', 'true');
+    setShowAvatarPrompt(false);
   };
 
   const renderFamilyItem = ({ item }: { item: Family }) => {
@@ -287,6 +304,30 @@ export default function DiscoverScreen() {
           </View>
           <Feather name="chevron-right" size={24} color={theme.textSecondary} />
         </Pressable>
+
+        {showAvatarPrompt && !user?.avatarUrl ? (
+          <View style={[styles.avatarPromptBanner, { backgroundColor: theme.backgroundSecondary, ...Shadows.card }]}>
+            <View style={styles.bannerContent}>
+              <Feather name="camera" size={24} color={theme.secondary} />
+              <ThemedText type="body" style={[styles.bannerText, { color: theme.text }]}>
+                Add a family photo to help others recognise you!
+              </ThemedText>
+            </View>
+            <View style={styles.bannerActions}>
+              <Pressable
+                onPress={() => navigation.navigate("EditProfile")}
+                style={[styles.addPhotoButton, { backgroundColor: theme.secondary }]}
+              >
+                <ThemedText type="body" style={[styles.addPhotoButtonText, { fontWeight: "600" }]}>
+                  Add Photo
+                </ThemedText>
+              </Pressable>
+              <Pressable onPress={handleDismissAvatarPrompt} style={styles.dismissButton}>
+                <Feather name="x" size={24} color={theme.textSecondary} />
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
 
         {families.length < 10 ? (
           <View style={[styles.welcomeCard, { backgroundColor: theme.backgroundDefault, ...Shadows.card }]}>
@@ -627,5 +668,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 6,
+  },
+  avatarPromptBanner: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.md,
+  },
+  bannerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginBottom: Spacing.md,
+  },
+  bannerText: {
+    flex: 1,
+    marginLeft: Spacing.md,
+    fontWeight: "500",
+  },
+  bannerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  addPhotoButton: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addPhotoButtonText: {
+    color: "#FFFFFF",
+  },
+  dismissButton: {
+    padding: Spacing.sm,
   },
 });

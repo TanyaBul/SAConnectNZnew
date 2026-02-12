@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, Pressable, ActivityIndicator, Modal, Linking, Platform } from "react-native";
+import { View, StyleSheet, FlatList, RefreshControl, Pressable, ActivityIndicator, Modal, Linking, Platform, TextInput as RNTextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -61,6 +61,13 @@ export default function BusinessHubScreen() {
   const [editLogoUrl, setEditLogoUrl] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [deleteBizConfirmId, setDeleteBizConfirmId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredBusinesses = businesses.filter(b => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return b.name.toLowerCase().includes(q) || (b.description || '').toLowerCase().includes(q) || (b.location || '').toLowerCase().includes(q) || (b.promotion || '').toLowerCase().includes(q);
+  });
 
   const loadData = useCallback(async () => {
     try {
@@ -465,8 +472,24 @@ export default function BusinessHubScreen() {
         </ThemedText>
         <Feather name="chevron-right" size={16} color={theme.primary} />
       </Pressable>
+      <View style={[styles.searchBar, { borderColor: theme.border, backgroundColor: theme.backgroundDefault }]}>
+        <Feather name="search" size={18} color={theme.textSecondary} />
+        <RNTextInput
+          style={[styles.searchInput, { color: theme.text, fontFamily: Typography.body.fontFamily }]}
+          placeholder="Search businesses..."
+          placeholderTextColor={theme.textSecondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          testID="input-search-businesses"
+        />
+        {searchQuery.length > 0 ? (
+          <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
+            <Feather name="x" size={18} color={theme.textSecondary} />
+          </Pressable>
+        ) : null}
+      </View>
       <FlatList
-        data={businesses}
+        data={filteredBusinesses}
         keyExtractor={(item) => item.id}
         renderItem={renderBusiness}
         contentContainerStyle={[
@@ -889,5 +912,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.xs,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 44,
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    height: "100%",
+    marginLeft: Spacing.sm,
   },
 });
