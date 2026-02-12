@@ -17,6 +17,7 @@ import EditWelcomeCardsScreen from "@/screens/EditWelcomeCardsScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
+import { useNotifications } from "@/hooks/useNotifications";
 import { Family } from "@/lib/storage";
 
 export type RootStackParamList = {
@@ -40,6 +41,7 @@ export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
   const { user, isLoading, isOnboarded } = useAuth();
   const { theme } = useTheme();
+  useNotifications(user?.id);
 
   if (isLoading) {
     return (

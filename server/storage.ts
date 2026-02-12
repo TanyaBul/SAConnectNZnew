@@ -233,6 +233,11 @@ export class DatabaseStorage implements IStorage {
     return threadsWithDetails.filter((t) => t.otherUser);
   }
 
+  async getThreadById(threadId: string): Promise<schema.MessageThread | undefined> {
+    const result = await db.select().from(schema.messageThreads).where(eq(schema.messageThreads.id, threadId));
+    return result[0];
+  }
+
   async getOrCreateThread(userId1: string, userId2: string): Promise<schema.MessageThread> {
     const existing = await db.select().from(schema.messageThreads).where(
       or(

@@ -96,6 +96,15 @@ Full PostgreSQL database integration with Drizzle ORM:
 All data persists server-side - no more demo/sample data.
 
 ## Recent Changes
+- Added Push Notifications
+  - Expo push notifications for new messages and connection requests
+  - Server sends notifications via Expo Push API when messages/connections are created
+  - Client registers push token on login, stored in push_tokens table
+  - Notification handler shows alerts even when app is in foreground
+  - API endpoints: POST/DELETE /api/push-token
+  - Database table: push_tokens
+  - Green badge dots on bottom tab bar for unread messages, new events, businesses, and pending connection requests
+- Removed connections section from Profile screen (still visible in Discover)
 - Added Business Hub feature
   - Free business listings for SA families in NZ
   - Categories: Food & Baking, Beauty & Wellness, Home Services, Health & Fitness, Education & Tutoring, Childcare, Events & Entertainment, Arts & Crafts, Professional Services, Retail, Transport, Other
