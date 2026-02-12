@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { storage } from "./storage";
 import { loginSchema, insertUserSchema, insertEventSchema } from "@shared/schema";
+import { registerPushToken, removePushToken, sendPushNotifications } from "./push-notifications";
 
 function sanitizeUser(user: any) {
   const { password, ...safeUser } = user;
@@ -320,6 +321,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const connection = await storage.createConnection(userId, targetUserId);
       res.json(connection);
+
+      try {
+        const sender = await storage.getUserById(userId);
+        const senderName = sender?.familyName || "A family";
+        sendPushNotifications(
+          [targetUserId],
+          "New Connection Request",
+          `${senderName} wants to connect with your family!`,
+          { type: "connection", connectionId: connection.id }
+        ).catch((err) => console.error("Push notification error:", err));
+      } catch (pushErr) {
+        console.error("Push notification error:", pushErr);
+      }
     } catch (error) {
       console.error("Create connection error:", error);
       res.status(500).json({ error: "Failed to create connection" });
@@ -385,6 +399,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const message = await storage.sendMessage(threadId, senderId, text);
       res.json(message);
+
+      try {
+        const thread = await storage.getThreadById(threadId);
+        if (thread) {
+          const recipientId = thread.user1Id === senderId ? thread.user2Id : thread.user1Id;
+          const sender = await storage.getUserById(senderId);
+          const senderName = sender?.familyName || "Someone";
+          sendPushNotifications(
+            [recipientId],
+            `New message from ${senderName}`,
+            text.length > 100 ? text.substring(0, 100) + "..." : text,
+            { type: "message", threadId }
+          ).catch((err) => console.error("Push notification error:", err));
+        }
+      } catch (pushErr) {
+        console.error("Push notification error:", pushErr);
+      }
     } catch (error) {
       console.error("Send message error:", error);
       res.status(500).json({ error: "Failed to send message" });
@@ -402,6 +433,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Mark thread read error:", error);
       res.status(500).json({ error: "Failed to mark thread as read" });
+    }
+  });
+
+  app.post("/api/push-token", async (req: Request, res: Response) => {
+    try {
+      const { userId, token } = req.body;
+      if (!userId || !token) {
+        return res.status(400).json({ error: "userId and token are required" });
+      }
+      await registerPushToken(userId, token);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Register push token error:", error);
+      res.status(500).json({ error: "Failed to register push token" });
+    }
+  });
+
+  app.delete("/api/push-token", async (req: Request, res: Response) => {
+    try {
+      const { userId, token } = req.body;
+      if (!userId || !token) {
+        return res.status(400).json({ error: "userId and token are required" });
+      }
+      await removePushToken(userId, token);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Remove push token error:", error);
+      res.status(500).json({ error: "Failed to remove push token" });
     }
   });
 

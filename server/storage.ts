@@ -25,6 +25,7 @@ export interface IStorage {
   getConnectionBetween(userId: string, targetUserId: string): Promise<schema.Connection | undefined>;
   
   getThreads(userId: string): Promise<(schema.MessageThread & { otherUser: schema.User; unreadCount: number })[]>;
+  getThreadById(threadId: string): Promise<schema.MessageThread | undefined>;
   getOrCreateThread(userId1: string, userId2: string): Promise<schema.MessageThread>;
   getMessages(threadId: string): Promise<schema.Message[]>;
   sendMessage(threadId: string, senderId: string, text: string): Promise<schema.Message>;

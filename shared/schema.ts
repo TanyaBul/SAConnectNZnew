@@ -217,6 +217,17 @@ export const businesses = pgTable("businesses", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const pushTokens = pgTable("push_tokens", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertBusinessSchema = createInsertSchema(businesses).omit({
   id: true,
   userId: true,
@@ -246,3 +257,4 @@ export type EventAttendee = typeof eventAttendees.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type WelcomeCard = typeof welcomeCards.$inferSelect;
 export type Business = typeof businesses.$inferSelect;
+export type PushToken = typeof pushTokens.$inferSelect;
