@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, Modal, Pressable, TextInput } from "react-native";
+import { View, StyleSheet, ScrollView, Modal, Pressable, TextInput, Dimensions, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -15,6 +16,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { addConnection, getConnections, updateConnectionStatus, blockUser, reportUser, getOrCreateThread, REPORT_REASONS } from "@/lib/storage";
+import { getApiUrl } from "@/lib/query-client";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "@/context/AuthContext";
 
@@ -27,6 +29,7 @@ export default function FamilyDetailScreen() {
   const { family } = route.params;
   const { user } = useAuth();
 
+  const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
   const [connectionId, setConnectionId] = useState<string | null>(null);
   const [isReceiver, setIsReceiver] = useState(false);
@@ -166,7 +169,7 @@ export default function FamilyDetailScreen() {
         ]}
       >
         <View style={styles.header}>
-          <Avatar uri={family.avatarUrl} size="xlarge" />
+          <Avatar uri={family.avatarUrl} size="xlarge" onPress={family.avatarUrl ? () => setPhotoViewerVisible(true) : undefined} />
           <ThemedText type="h3" style={styles.familyName}>
             {family.familyName}
           </ThemedText>
@@ -424,9 +427,44 @@ export default function FamilyDetailScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <Modal
+        visible={photoViewerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPhotoViewerVisible(false)}
+        statusBarTranslucent
+      >
+        <View style={styles.photoViewerOverlay}>
+          <Pressable
+            style={styles.photoViewerClose}
+            onPress={() => setPhotoViewerVisible(false)}
+          >
+            <Feather name="x" size={28} color="#FFFFFF" />
+          </Pressable>
+          <ThemedText type="body" style={styles.photoViewerName}>
+            {family.familyName}
+          </ThemedText>
+          <View style={styles.photoViewerContent}>
+            {family.avatarUrl ? (
+              <Image
+                source={{ uri: family.avatarUrl.startsWith("/uploads/") ? `${getApiUrl()}${family.avatarUrl}` : family.avatarUrl }}
+                style={styles.photoViewerImage}
+                contentFit="contain"
+              />
+            ) : null}
+          </View>
+          <Pressable
+            style={styles.photoViewerBackground}
+            onPress={() => setPhotoViewerVisible(false)}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   container: {
@@ -599,5 +637,45 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: Spacing.md,
+  },
+  photoViewerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  photoViewerBackground: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -1,
+  },
+  photoViewerClose: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photoViewerName: {
+    position: "absolute",
+    top: 56,
+    left: 20,
+    color: "#FFFFFF",
+    fontWeight: "600",
+    zIndex: 10,
+  },
+  photoViewerContent: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_WIDTH,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  photoViewerImage: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_WIDTH,
   },
 });
