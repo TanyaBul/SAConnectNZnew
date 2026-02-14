@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Platform } from "react-native";
+import { Platform, AppState } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { apiRequest } from "@/lib/query-client";
@@ -66,6 +66,22 @@ export function useNotifications(userId?: string) {
         }
       }
     });
+  }, [userId]);
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+
+    Notifications.setBadgeCountAsync(0).catch(() => {});
+
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        Notifications.setBadgeCountAsync(0).catch(() => {});
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, [userId]);
 
   return { token: tokenRef.current };

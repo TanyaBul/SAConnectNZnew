@@ -57,6 +57,7 @@ export async function sendPushNotifications(
     title,
     body,
     sound: "default" as const,
+    badge: 1,
     data: data || {},
   }));
 
