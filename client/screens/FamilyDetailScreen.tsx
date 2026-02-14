@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Modal, Pressable, TextInput, Dimensions, StatusBar } from "react-native";
+import { View, StyleSheet, ScrollView, Modal, Pressable, TextInput, Dimensions, StatusBar, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
@@ -26,9 +26,11 @@ export default function FamilyDetailScreen() {
   const headerHeight = useHeaderHeight();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "FamilyDetail">>();
-  const { family } = route.params;
+  const routeFamily = route.params.family;
   const { user } = useAuth();
 
+  const [family, setFamily] = useState(routeFamily);
+  const [loadingProfile, setLoadingProfile] = useState(false);
   const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
   const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
   const [allViewerPhotos, setAllViewerPhotos] = useState<{ uri: string }[]>([]);
@@ -44,9 +46,35 @@ export default function FamilyDetailScreen() {
   const [familyPhotos, setFamilyPhotos] = useState<FamilyPhoto[]>([]);
 
   useEffect(() => {
+    loadFullProfile();
     checkConnection();
     loadFamilyPhotos();
   }, []);
+
+  const loadFullProfile = async () => {
+    if (!routeFamily?.id) return;
+    if (routeFamily.interests && routeFamily.interests.length >= 0 && routeFamily.familyMembers) return;
+    setLoadingProfile(true);
+    try {
+      const response = await fetch(new URL(`/api/users/${routeFamily.id}`, getApiUrl()).toString());
+      if (response.ok) {
+        const fullUser = await response.json();
+        setFamily({
+          ...routeFamily,
+          ...fullUser,
+          interests: fullUser.interests || [],
+          familyMembers: fullUser.familyMembers || [],
+          suburb: fullUser.suburb || routeFamily.suburb || "",
+          city: fullUser.city || routeFamily.city || "",
+          bio: fullUser.bio || routeFamily.bio || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error loading full profile:", error);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
 
   const loadFamilyPhotos = async () => {
     const photos = await getFamilyPhotos(family.id);
@@ -203,15 +231,17 @@ export default function FamilyDetailScreen() {
             {family.familyName}
           </ThemedText>
           
-          <View style={styles.metaRow}>
-            <Feather name="map-pin" size={16} color={theme.textSecondary} />
-            <ThemedText
-              type="body"
-              style={[styles.metaText, { color: theme.textSecondary }]}
-            >
-              {family.suburb}{family.city ? `, ${family.city}` : ""}
-            </ThemedText>
-          </View>
+          {family.suburb || family.city ? (
+            <View style={styles.metaRow}>
+              <Feather name="map-pin" size={16} color={theme.textSecondary} />
+              <ThemedText
+                type="body"
+                style={[styles.metaText, { color: theme.textSecondary }]}
+              >
+                {family.suburb || ""}{family.city ? `${family.suburb ? ", " : ""}${family.city}` : ""}
+              </ThemedText>
+            </View>
+          ) : null}
           
           {family.distance !== undefined ? (
             <View style={[styles.distanceBadge, { backgroundColor: theme.secondary + "15" }]}>
@@ -282,7 +312,7 @@ export default function FamilyDetailScreen() {
           </View>
         ) : null}
 
-        {family.interests.length > 0 ? (
+        {family.interests && family.interests.length > 0 ? (
           <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
             <ThemedText type="heading" style={styles.sectionTitle}>
               Interests
