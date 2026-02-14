@@ -217,6 +217,18 @@ export const businesses = pgTable("businesses", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const familyPhotos = pgTable("family_photos", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  photoUrl: text("photo_url").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const pushTokens = pgTable("push_tokens", {
   id: varchar("id", { length: 36 })
     .primaryKey()
@@ -257,4 +269,5 @@ export type EventAttendee = typeof eventAttendees.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type WelcomeCard = typeof welcomeCards.$inferSelect;
 export type Business = typeof businesses.$inferSelect;
+export type FamilyPhoto = typeof familyPhotos.$inferSelect;
 export type PushToken = typeof pushTokens.$inferSelect;
