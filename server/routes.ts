@@ -876,6 +876,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/users/:userId/photos", async (req: Request, res: Response) => {
+    try {
+      const photos = await storage.getFamilyPhotos(req.params.userId as string);
+      res.json(photos);
+    } catch (error) {
+      console.error("Get family photos error:", error);
+      res.status(500).json({ error: "Failed to get photos" });
+    }
+  });
+
+  app.post("/api/users/:userId/photos", async (req: Request, res: Response) => {
+    try {
+      const userId = req.params.userId as string;
+      const { imageData } = req.body;
+
+      if (!imageData) {
+        return res.status(400).json({ error: "Image data is required" });
+      }
+
+      const count = await storage.countFamilyPhotos(userId);
+      if (count >= 5) {
+        return res.status(400).json({ error: "Maximum 5 photos allowed" });
+      }
+
+      const { Client } = await import("@replit/object-storage");
+      const client = new Client();
+      const key = `family-photos/${userId}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.jpg`;
+
+      let buffer: Buffer;
+      const matches = imageData.match(/^data:image\/([\w+]+);base64,(.+)$/);
+      if (matches) {
+        buffer = Buffer.from(matches[2], "base64");
+      } else {
+        buffer = Buffer.from(imageData, "base64");
+      }
+
+      await client.uploadFromBytes(key, buffer);
+      const photoUrl = `/api/storage/${key}`;
+
+      const photo = await storage.addFamilyPhoto(userId, photoUrl, count);
+      res.json(photo);
+    } catch (error) {
+      console.error("Upload family photo error:", error);
+      res.status(500).json({ error: "Failed to upload photo" });
+    }
+  });
+
+  app.delete("/api/users/:userId/photos/:photoId", async (req: Request, res: Response) => {
+    try {
+      const photo = await storage.deleteFamilyPhoto(req.params.photoId as string);
+      if (!photo) {
+        return res.status(404).json({ error: "Photo not found" });
+      }
+
+      try {
+        const { Client } = await import("@replit/object-storage");
+        const client = new Client();
+        const key = photo.photoUrl.replace("/api/storage/", "");
+        await client.delete(key);
+      } catch (deleteError) {
+        console.error("Failed to delete from object storage:", deleteError);
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete family photo error:", error);
+      res.status(500).json({ error: "Failed to delete photo" });
+    }
+  });
+
+  app.get("/api/storage/:folder/:userId/:filename", async (req: Request, res: Response) => {
+    try {
+      const key = `${req.params.folder}/${req.params.userId}/${req.params.filename}`;
+
+      const { Client } = await import("@replit/object-storage");
+      const client = new Client();
+      const { ok, value } = await client.downloadAsBytes(key);
+
+      if (!ok) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      res.set("Content-Type", "image/jpeg");
+      res.set("Cache-Control", "public, max-age=31536000");
+      res.send(value as any);
+    } catch (error) {
+      console.error("Storage download error:", error);
+      res.status(500).json({ error: "Failed to retrieve file" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -517,3 +517,44 @@ export async function deleteBusiness(id: string): Promise<boolean> {
     return false;
   }
 }
+
+export interface FamilyPhoto {
+  id: string;
+  userId: string;
+  photoUrl: string;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export async function getFamilyPhotos(userId: string): Promise<FamilyPhoto[]> {
+  try {
+    const response = await fetch(new URL(`/api/users/${userId}/photos`, getApiUrl()).toString());
+    if (!response.ok) return [];
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching family photos:", error);
+    return [];
+  }
+}
+
+export async function uploadFamilyPhoto(userId: string, imageData: string): Promise<FamilyPhoto | null> {
+  try {
+    const response = await apiRequest("POST", `/api/users/${userId}/photos`, { imageData });
+    return await response.json();
+  } catch (error) {
+    console.error("Error uploading family photo:", error);
+    return null;
+  }
+}
+
+export async function deleteFamilyPhoto(userId: string, photoId: string): Promise<boolean> {
+  try {
+    const response = await fetch(new URL(`/api/users/${userId}/photos/${photoId}`, getApiUrl()).toString(), {
+      method: "DELETE",
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error deleting family photo:", error);
+    return false;
+  }
+}

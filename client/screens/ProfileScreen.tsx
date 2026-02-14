@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Pressable, RefreshControl } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, RefreshControl, Modal, Dimensions, ActivityIndicator, Alert, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -17,6 +18,11 @@ import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { showImagePickerOptions, launchCamera, launchImageLibrary } from "@/lib/imagePicker";
+import { getFamilyPhotos, uploadFamilyPhoto, deleteFamilyPhoto, FamilyPhoto } from "@/lib/storage";
+import { getApiUrl } from "@/lib/query-client";
+
+const MAX_PHOTOS = 5;
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function ProfileScreen() {
   const { theme } = useTheme();
@@ -26,6 +32,22 @@ export default function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, updateProfile, refreshUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const [photos, setPhotos] = useState<FamilyPhoto[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+
+  const loadPhotos = useCallback(async () => {
+    if (!user?.id) return;
+    const data = await getFamilyPhotos(user.id);
+    setPhotos(data);
+  }, [user?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadPhotos();
+    }, [loadPhotos])
+  );
 
   const handleAvatarPress = () => {
     showImagePickerOptions(
@@ -48,14 +70,93 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleAddPhoto = () => {
+    if (photos.length >= MAX_PHOTOS) {
+      Alert.alert("Photo Limit", `You can add up to ${MAX_PHOTOS} family photos.`);
+      return;
+    }
+
+    showImagePickerOptions(
+      async () => {
+        const result = await launchCamera();
+        if (result && user?.id) {
+          setUploading(true);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          const photo = await uploadFamilyPhoto(user.id, result.base64 || result.uri);
+          if (photo) {
+            setPhotos((prev) => [...prev, photo]);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+          setUploading(false);
+        }
+      },
+      async () => {
+        const result = await launchImageLibrary();
+        if (result && user?.id) {
+          setUploading(true);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          const photo = await uploadFamilyPhoto(user.id, result.base64 || result.uri);
+          if (photo) {
+            setPhotos((prev) => [...prev, photo]);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+          setUploading(false);
+        }
+      }
+    );
+  };
+
+  const handleDeletePhoto = (photoId: string) => {
+    if (Platform.OS === "web") {
+      if (user?.id) {
+        doDeletePhoto(photoId);
+      }
+      return;
+    }
+
+    Alert.alert(
+      "Remove Photo",
+      "Are you sure you want to remove this photo?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => {
+            if (user?.id) {
+              doDeletePhoto(photoId);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const doDeletePhoto = async (photoId: string) => {
+    if (!user?.id) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const success = await deleteFamilyPhoto(user.id, photoId);
+    if (success) {
+      setPhotos((prev) => prev.filter((p) => p.id !== photoId));
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  };
+
+  const getPhotoUri = (photoUrl: string) => {
+    if (photoUrl.startsWith("/api/")) {
+      return `${getApiUrl()}${photoUrl}`;
+    }
+    return photoUrl;
+  };
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await refreshUser();
+      await Promise.all([refreshUser(), loadPhotos()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refreshUser]);
+  }, [refreshUser, loadPhotos]);
 
   if (!user) {
     return (
@@ -133,6 +234,61 @@ export default function ProfileScreen() {
           </Pressable>
         )}
 
+        <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
+          <View style={styles.sectionHeader}>
+            <ThemedText type="heading" style={styles.sectionTitle}>
+              Family Photos
+            </ThemedText>
+            <ThemedText type="small" style={{ color: theme.textSecondary }}>
+              {photos.length}/{MAX_PHOTOS}
+            </ThemedText>
+          </View>
+          <View style={styles.photoGrid}>
+            {photos.map((photo, index) => (
+              <Pressable
+                key={photo.id}
+                style={styles.photoItem}
+                onPress={() => {
+                  setSelectedPhotoIndex(index);
+                  setPhotoViewerVisible(true);
+                }}
+              >
+                <Image
+                  source={{ uri: getPhotoUri(photo.photoUrl) }}
+                  style={styles.photoImage}
+                  contentFit="cover"
+                />
+                <Pressable
+                  style={[styles.deletePhotoBadge, { backgroundColor: theme.error }]}
+                  onPress={() => handleDeletePhoto(photo.id)}
+                  testID={`delete-photo-${photo.id}`}
+                >
+                  <Feather name="x" size={12} color="#FFFFFF" />
+                </Pressable>
+              </Pressable>
+            ))}
+            {photos.length < MAX_PHOTOS ? (
+              <Pressable
+                style={[styles.addPhotoButton, { borderColor: theme.border, backgroundColor: theme.backgroundSecondary }]}
+                onPress={handleAddPhoto}
+                disabled={uploading}
+                testID="add-family-photo"
+              >
+                {uploading ? (
+                  <ActivityIndicator size="small" color={theme.primary} />
+                ) : (
+                  <>
+                    <Feather name="plus" size={24} color={theme.primary} />
+                    <ThemedText type="small" style={{ color: theme.primary, marginTop: Spacing.xs }}>
+                      Add
+                    </ThemedText>
+                  </>
+                )}
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+
         {user.familyMembers && user.familyMembers.length > 0 ? (
           <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
             <ThemedText type="heading" style={styles.sectionTitle}>
@@ -188,6 +344,61 @@ export default function ProfileScreen() {
           Settings
         </Button>
       </ScrollView>
+
+      <Modal
+        visible={photoViewerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPhotoViewerVisible(false)}
+        statusBarTranslucent
+      >
+        <View style={styles.photoViewerOverlay}>
+          <Pressable
+            style={styles.photoViewerClose}
+            onPress={() => setPhotoViewerVisible(false)}
+          >
+            <Feather name="x" size={28} color="#FFFFFF" />
+          </Pressable>
+          <ThemedText type="body" style={styles.photoViewerName}>
+            {selectedPhotoIndex + 1} of {photos.length}
+          </ThemedText>
+          <View style={styles.photoViewerContent}>
+            {photos[selectedPhotoIndex] ? (
+              <Image
+                source={{ uri: getPhotoUri(photos[selectedPhotoIndex].photoUrl) }}
+                style={styles.photoViewerImage}
+                contentFit="contain"
+              />
+            ) : null}
+          </View>
+          <View style={styles.photoViewerNav}>
+            {selectedPhotoIndex > 0 ? (
+              <Pressable
+                style={styles.navButton}
+                onPress={() => setSelectedPhotoIndex((i) => i - 1)}
+              >
+                <Feather name="chevron-left" size={32} color="#FFFFFF" />
+              </Pressable>
+            ) : (
+              <View style={styles.navButton} />
+            )}
+            {selectedPhotoIndex < photos.length - 1 ? (
+              <Pressable
+                style={styles.navButton}
+                onPress={() => setSelectedPhotoIndex((i) => i + 1)}
+              >
+                <Feather name="chevron-right" size={32} color="#FFFFFF" />
+              </Pressable>
+            ) : (
+              <View style={styles.navButton} />
+            )}
+          </View>
+          <Pressable
+            style={styles.photoViewerBackground}
+            onPress={() => setPhotoViewerVisible(false)}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -240,8 +451,48 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
     marginBottom: Spacing.lg,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
   sectionTitle: {
     marginBottom: Spacing.md,
+  },
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  photoItem: {
+    width: (SCREEN_WIDTH - Spacing.lg * 2 - Spacing.lg * 2 - Spacing.sm * 2) / 3,
+    aspectRatio: 1,
+    borderRadius: BorderRadius.sm,
+    overflow: "hidden",
+  },
+  photoImage: {
+    width: "100%",
+    height: "100%",
+  },
+  deletePhotoBadge: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addPhotoButton: {
+    width: (SCREEN_WIDTH - Spacing.lg * 2 - Spacing.lg * 2 - Spacing.sm * 2) / 3,
+    aspectRatio: 1,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
   },
   membersGrid: {
     gap: Spacing.sm,
@@ -265,5 +516,62 @@ const styles = StyleSheet.create({
   },
   settingsButton: {
     marginTop: Spacing.sm,
+  },
+  photoViewerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  photoViewerBackground: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -1,
+  },
+  photoViewerClose: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photoViewerName: {
+    position: "absolute",
+    top: 56,
+    left: 20,
+    color: "#FFFFFF",
+    fontWeight: "600",
+    zIndex: 10,
+  },
+  photoViewerContent: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_WIDTH,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  photoViewerImage: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_WIDTH,
+  },
+  photoViewerNav: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.md,
+    zIndex: 10,
+  },
+  navButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

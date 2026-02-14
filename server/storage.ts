@@ -68,6 +68,11 @@ export interface IStorage {
   updateBusiness(id: string, data: Partial<Omit<schema.Business, "id" | "userId" | "createdAt">>): Promise<schema.Business | undefined>;
   deleteBusiness(id: string): Promise<void>;
 
+  getFamilyPhotos(userId: string): Promise<schema.FamilyPhoto[]>;
+  addFamilyPhoto(userId: string, photoUrl: string, sortOrder: number): Promise<schema.FamilyPhoto>;
+  deleteFamilyPhoto(id: string): Promise<schema.FamilyPhoto | undefined>;
+  countFamilyPhotos(userId: string): Promise<number>;
+
   deleteUser(id: string): Promise<boolean>;
 }
 
@@ -594,6 +599,28 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBusiness(id: string): Promise<void> {
     await db.delete(schema.businesses).where(eq(schema.businesses.id, id));
+  }
+
+  async getFamilyPhotos(userId: string): Promise<schema.FamilyPhoto[]> {
+    return db.select().from(schema.familyPhotos)
+      .where(eq(schema.familyPhotos.userId, userId))
+      .orderBy(schema.familyPhotos.sortOrder);
+  }
+
+  async addFamilyPhoto(userId: string, photoUrl: string, sortOrder: number): Promise<schema.FamilyPhoto> {
+    const [photo] = await db.insert(schema.familyPhotos).values({ userId, photoUrl, sortOrder }).returning();
+    return photo;
+  }
+
+  async deleteFamilyPhoto(id: string): Promise<schema.FamilyPhoto | undefined> {
+    const [photo] = await db.delete(schema.familyPhotos).where(eq(schema.familyPhotos.id, id)).returning();
+    return photo;
+  }
+
+  async countFamilyPhotos(userId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)::int` }).from(schema.familyPhotos)
+      .where(eq(schema.familyPhotos.userId, userId));
+    return result[0]?.count || 0;
   }
 
   async deleteUser(id: string): Promise<boolean> {

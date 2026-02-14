@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView, Modal, Pressable, TextInput, Dimensions, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -15,7 +15,7 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-import { addConnection, getConnections, updateConnectionStatus, blockUser, reportUser, getOrCreateThread, REPORT_REASONS } from "@/lib/storage";
+import { addConnection, getConnections, updateConnectionStatus, blockUser, reportUser, getOrCreateThread, REPORT_REASONS, getFamilyPhotos, FamilyPhoto } from "@/lib/storage";
 import { getApiUrl } from "@/lib/query-client";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "@/context/AuthContext";
@@ -30,6 +30,8 @@ export default function FamilyDetailScreen() {
   const { user } = useAuth();
 
   const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
+  const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
+  const [allViewerPhotos, setAllViewerPhotos] = useState<{ uri: string }[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
   const [connectionId, setConnectionId] = useState<string | null>(null);
   const [isReceiver, setIsReceiver] = useState(false);
@@ -39,10 +41,24 @@ export default function FamilyDetailScreen() {
   const [selectedReason, setSelectedReason] = useState<string>("");
   const [reportDetails, setReportDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [familyPhotos, setFamilyPhotos] = useState<FamilyPhoto[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     checkConnection();
+    loadFamilyPhotos();
   }, []);
+
+  const loadFamilyPhotos = async () => {
+    const photos = await getFamilyPhotos(family.id);
+    setFamilyPhotos(photos);
+  };
+
+  const getPhotoUri = (photoUrl: string) => {
+    if (photoUrl.startsWith("/api/")) {
+      return `${getApiUrl()}${photoUrl}`;
+    }
+    return photoUrl;
+  };
 
   const checkConnection = async () => {
     if (!user?.id) return;
@@ -157,6 +173,19 @@ export default function FamilyDetailScreen() {
     }
   };
 
+  const openPhotoViewer = (index: number, includeAvatar: boolean) => {
+    const viewerPhotos: { uri: string }[] = [];
+    if (includeAvatar && family.avatarUrl) {
+      viewerPhotos.push({ uri: family.avatarUrl.startsWith("/uploads/") ? `${getApiUrl()}${family.avatarUrl}` : family.avatarUrl });
+    }
+    for (const photo of familyPhotos) {
+      viewerPhotos.push({ uri: getPhotoUri(photo.photoUrl) });
+    }
+    setAllViewerPhotos(viewerPhotos);
+    setPhotoViewerIndex(index);
+    setPhotoViewerVisible(true);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ScrollView
@@ -169,7 +198,7 @@ export default function FamilyDetailScreen() {
         ]}
       >
         <View style={styles.header}>
-          <Avatar uri={family.avatarUrl} size="xlarge" onPress={family.avatarUrl ? () => setPhotoViewerVisible(true) : undefined} />
+          <Avatar uri={family.avatarUrl} size="xlarge" onPress={family.avatarUrl ? () => openPhotoViewer(0, true) : undefined} />
           <ThemedText type="h3" style={styles.familyName}>
             {family.familyName}
           </ThemedText>
@@ -192,6 +221,29 @@ export default function FamilyDetailScreen() {
             </View>
           ) : null}
         </View>
+
+        {familyPhotos.length > 0 ? (
+          <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
+            <ThemedText type="heading" style={styles.sectionTitle}>
+              Family Photos
+            </ThemedText>
+            <View style={styles.photoGrid}>
+              {familyPhotos.map((photo, index) => (
+                <Pressable
+                  key={photo.id}
+                  style={styles.photoItem}
+                  onPress={() => openPhotoViewer(family.avatarUrl ? index + 1 : index, !!family.avatarUrl)}
+                >
+                  <Image
+                    source={{ uri: getPhotoUri(photo.photoUrl) }}
+                    style={styles.photoImage}
+                    contentFit="cover"
+                  />
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         {family.bio ? (
           <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
@@ -443,17 +495,41 @@ export default function FamilyDetailScreen() {
             <Feather name="x" size={28} color="#FFFFFF" />
           </Pressable>
           <ThemedText type="body" style={styles.photoViewerName}>
-            {family.familyName}
+            {family.familyName} {allViewerPhotos.length > 1 ? `(${photoViewerIndex + 1}/${allViewerPhotos.length})` : ""}
           </ThemedText>
           <View style={styles.photoViewerContent}>
-            {family.avatarUrl ? (
+            {allViewerPhotos[photoViewerIndex] ? (
               <Image
-                source={{ uri: family.avatarUrl.startsWith("/uploads/") ? `${getApiUrl()}${family.avatarUrl}` : family.avatarUrl }}
+                source={{ uri: allViewerPhotos[photoViewerIndex].uri }}
                 style={styles.photoViewerImage}
                 contentFit="contain"
               />
             ) : null}
           </View>
+          {allViewerPhotos.length > 1 ? (
+            <View style={styles.photoViewerNav}>
+              {photoViewerIndex > 0 ? (
+                <Pressable
+                  style={styles.navButton}
+                  onPress={() => setPhotoViewerIndex((i) => i - 1)}
+                >
+                  <Feather name="chevron-left" size={32} color="#FFFFFF" />
+                </Pressable>
+              ) : (
+                <View style={styles.navButton} />
+              )}
+              {photoViewerIndex < allViewerPhotos.length - 1 ? (
+                <Pressable
+                  style={styles.navButton}
+                  onPress={() => setPhotoViewerIndex((i) => i + 1)}
+                >
+                  <Feather name="chevron-right" size={32} color="#FFFFFF" />
+                </Pressable>
+              ) : (
+                <View style={styles.navButton} />
+              )}
+            </View>
+          ) : null}
           <Pressable
             style={styles.photoViewerBackground}
             onPress={() => setPhotoViewerVisible(false)}
@@ -503,6 +579,21 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginBottom: Spacing.md,
+  },
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  photoItem: {
+    width: (SCREEN_WIDTH - Spacing.lg * 2 - Spacing.lg * 2 - Spacing.sm * 2) / 3,
+    aspectRatio: 1,
+    borderRadius: BorderRadius.sm,
+    overflow: "hidden",
+  },
+  photoImage: {
+    width: "100%",
+    height: "100%",
   },
   membersGrid: {
     gap: Spacing.sm,
@@ -677,5 +768,22 @@ const styles = StyleSheet.create({
   photoViewerImage: {
     width: SCREEN_WIDTH,
     height: SCREEN_WIDTH,
+  },
+  photoViewerNav: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.md,
+    zIndex: 10,
+  },
+  navButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
