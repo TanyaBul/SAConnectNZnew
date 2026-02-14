@@ -96,6 +96,16 @@ Full PostgreSQL database integration with Drizzle ORM:
 All data persists server-side - no more demo/sample data.
 
 ## Recent Changes
+- Family Photo Gallery
+  - Upload up to 5 family photos per profile
+  - Photos stored in /uploads/family-photos/ (filesystem, same as business logos)
+  - Native file upload via FormData (multer) for iOS/Android, base64 fallback for web
+  - Photo grid on Profile and FamilyDetail screens with full-screen viewer
+  - Database table: family_photos
+  - API endpoints: GET/POST /api/users/:userId/photos, DELETE /api/users/:userId/photos/:photoId
+- App icon badge for push notifications
+  - Push notifications now include badge: 1 for app icon badge on home screen
+  - Badge clears automatically when user opens the app
 - Added Push Notifications
   - Expo push notifications for new messages and connection requests
   - Server sends notifications via Expo Push API when messages/connections are created

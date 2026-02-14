@@ -886,12 +886,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/users/:userId/photos", async (req: Request, res: Response) => {
+  const multer = (await import("multer")).default;
+  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+  app.post("/api/users/:userId/photos", upload.single("photo"), async (req: Request, res: Response) => {
     try {
       const userId = req.params.userId as string;
-      const { imageData } = req.body;
+      const file = (req as any).file;
+      const imageData = req.body?.imageData;
 
-      if (!imageData) {
+      if (!file && !imageData) {
         return res.status(400).json({ error: "Image data is required" });
       }
 
@@ -900,20 +904,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Maximum 5 photos allowed" });
       }
 
-      const { Client } = await import("@replit/object-storage");
-      const client = new Client();
-      const key = `family-photos/${userId}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.jpg`;
+      let photoUrl: string;
 
-      let buffer: Buffer;
-      const matches = imageData.match(/^data:image\/([\w+]+);base64,(.+)$/);
-      if (matches) {
-        buffer = Buffer.from(matches[2], "base64");
+      if (file) {
+        const filename = `photo-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.jpg`;
+        const uploadsDir = path.resolve(process.cwd(), "uploads", "family-photos");
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        const filePath = path.join(uploadsDir, filename);
+        fs.writeFileSync(filePath, file.buffer);
+        photoUrl = `/uploads/family-photos/${filename}`;
       } else {
-        buffer = Buffer.from(imageData, "base64");
+        photoUrl = saveBase64Image(imageData, "family-photos");
       }
-
-      await client.uploadFromBytes(key, buffer);
-      const photoUrl = `/api/storage/${key}`;
 
       const photo = await storage.addFamilyPhoto(userId, photoUrl, count);
       res.json(photo);
@@ -931,12 +935,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       try {
-        const { Client } = await import("@replit/object-storage");
-        const client = new Client();
-        const key = photo.photoUrl.replace("/api/storage/", "");
-        await client.delete(key);
+        if (photo.photoUrl.startsWith("/uploads/")) {
+          const filePath = path.resolve(process.cwd(), photo.photoUrl.substring(1));
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+        }
       } catch (deleteError) {
-        console.error("Failed to delete from object storage:", deleteError);
+        console.error("Failed to delete photo file:", deleteError);
       }
 
       res.json({ success: true });
@@ -979,7 +985,7 @@ function saveBase64Image(base64String: string, subDir: string = "welcome-cards")
 
   const ext = matches[1] === "jpeg" ? "jpg" : matches[1];
   const data = matches[2];
-  const prefixMap: Record<string, string> = { "welcome-cards": "card", "business-logos": "biz", "avatars": "avatar" };
+  const prefixMap: Record<string, string> = { "welcome-cards": "card", "business-logos": "biz", "avatars": "avatar", "family-photos": "photo" };
   const prefix = prefixMap[subDir] || "img";
   const filename = `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
   const uploadsDir = path.resolve(process.cwd(), "uploads", subDir);

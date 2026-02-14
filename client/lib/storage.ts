@@ -537,9 +537,39 @@ export async function getFamilyPhotos(userId: string): Promise<FamilyPhoto[]> {
   }
 }
 
-export async function uploadFamilyPhoto(userId: string, imageData: string): Promise<FamilyPhoto | null> {
+export async function uploadFamilyPhoto(userId: string, imageUri: string): Promise<FamilyPhoto | null> {
   try {
-    const response = await apiRequest("POST", `/api/users/${userId}/photos`, { imageData });
+    const baseUrl = getApiUrl();
+    const url = new URL(`/api/users/${userId}/photos`, baseUrl).toString();
+
+    const formData = new FormData();
+
+    if (imageUri.startsWith("data:")) {
+      formData.append("imageData", imageUri);
+    } else {
+      const { Platform } = require("react-native");
+      if (Platform.OS === "web") {
+        formData.append("imageData", imageUri);
+      } else {
+        const fileExtension = imageUri.split(".").pop()?.toLowerCase() || "jpg";
+        const mimeType = fileExtension === "png" ? "image/png" : "image/jpeg";
+        formData.append("photo", {
+          uri: imageUri,
+          name: `photo.${fileExtension}`,
+          type: mimeType,
+        } as any);
+      }
+    }
+
+    const response = await fetch(url, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      console.error("Upload failed:", response.status, await response.text());
+      return null;
+    }
     return await response.json();
   } catch (error) {
     console.error("Error uploading family photo:", error);

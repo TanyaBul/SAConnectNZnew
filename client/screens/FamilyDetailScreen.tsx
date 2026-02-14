@@ -54,8 +54,8 @@ export default function FamilyDetailScreen() {
   };
 
   const getPhotoUri = (photoUrl: string) => {
-    if (photoUrl.startsWith("/api/")) {
-      return `${getApiUrl()}${photoUrl}`;
+    if (photoUrl.startsWith("/api/") || photoUrl.startsWith("/uploads/")) {
+      return new URL(photoUrl, getApiUrl()).toString();
     }
     return photoUrl;
   };
