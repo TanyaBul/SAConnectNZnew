@@ -887,16 +887,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const multer = (await import("multer")).default;
-  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
-
-  app.post("/api/users/:userId/photos", upload.single("photo"), async (req: Request, res: Response) => {
+  app.post("/api/users/:userId/photos", async (req: Request, res: Response) => {
     try {
       const userId = req.params.userId as string;
-      const file = (req as any).file;
       const imageData = req.body?.imageData;
 
-      if (!file && !imageData) {
+      if (!imageData) {
         return res.status(400).json({ error: "Image data is required" });
       }
 
@@ -905,21 +901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Maximum 5 photos allowed" });
       }
 
-      let photoUrl: string;
-
-      if (file) {
-        const filename = `photo-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.jpg`;
-        const uploadsDir = path.resolve(process.cwd(), "uploads", "family-photos");
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-        const filePath = path.join(uploadsDir, filename);
-        fs.writeFileSync(filePath, file.buffer);
-        photoUrl = `/uploads/family-photos/${filename}`;
-      } else {
-        photoUrl = saveBase64Image(imageData, "family-photos");
-      }
-
+      const photoUrl = saveBase64Image(imageData, "family-photos");
       const photo = await storage.addFamilyPhoto(userId, photoUrl, count);
       res.json(photo);
     } catch (error) {

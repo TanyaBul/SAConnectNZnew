@@ -82,7 +82,7 @@ export default function ProfileScreen() {
         if (result && user?.id) {
           setUploading(true);
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          const photo = await uploadFamilyPhoto(user.id, result.uri);
+          const photo = await uploadFamilyPhoto(user.id, result.base64 || result.uri);
           if (photo) {
             setPhotos((prev) => [...prev, photo]);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -95,7 +95,7 @@ export default function ProfileScreen() {
         if (result && user?.id) {
           setUploading(true);
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          const photo = await uploadFamilyPhoto(user.id, result.uri);
+          const photo = await uploadFamilyPhoto(user.id, result.base64 || result.uri);
           if (photo) {
             setPhotos((prev) => [...prev, photo]);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
