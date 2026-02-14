@@ -65,7 +65,8 @@ export async function sendPushNotifications(
 
   for (const chunk of chunks) {
     try {
-      await fetch("https://exp.host/--/api/v2/push/send", {
+      console.log(`Sending push notifications to ${chunk.length} token(s):`, chunk.map(m => m.to.substring(0, 30) + "..."));
+      const response = await fetch("https://exp.host/--/api/v2/push/send", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,6 +74,15 @@ export async function sendPushNotifications(
         },
         body: JSON.stringify(chunk),
       });
+      const result = await response.json();
+      console.log("Expo push response:", JSON.stringify(result));
+      if (result.data) {
+        for (const ticket of result.data) {
+          if (ticket.status === "error") {
+            console.error("Push ticket error:", ticket.message, ticket.details);
+          }
+        }
+      }
     } catch (error) {
       console.error("Error sending push notifications:", error);
     }

@@ -442,6 +442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId || !token) {
         return res.status(400).json({ error: "userId and token are required" });
       }
+      console.log(`Registering push token for user ${userId}: ${token.substring(0, 30)}...`);
       await registerPushToken(userId, token);
       res.json({ success: true });
     } catch (error) {

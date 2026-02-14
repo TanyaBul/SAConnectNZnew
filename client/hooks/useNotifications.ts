@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Platform, AppState } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
+import Constants from "expo-constants";
 import { apiRequest } from "@/lib/query-client";
 
 Notifications.setNotificationHandler({
@@ -15,11 +16,12 @@ Notifications.setNotificationHandler({
 });
 
 async function registerForPushNotifications(): Promise<string | null> {
-  if (!Device.isDevice) {
+  if (Platform.OS === "web") {
     return null;
   }
 
-  if (Platform.OS === "web") {
+  if (!Device.isDevice) {
+    console.log("Push notifications require a physical device");
     return null;
   }
 
@@ -32,6 +34,7 @@ async function registerForPushNotifications(): Promise<string | null> {
   }
 
   if (finalStatus !== "granted") {
+    console.log("Push notification permission not granted");
     return null;
   }
 
@@ -43,11 +46,25 @@ async function registerForPushNotifications(): Promise<string | null> {
     });
   }
 
-  const tokenData = await Notifications.getExpoPushTokenAsync({
-    projectId: "sa-connect-nz",
-  });
+  try {
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ??
+      Constants.easConfig?.projectId;
 
-  return tokenData.data;
+    if (!projectId) {
+      console.log("No EAS project ID found, trying with slug fallback");
+    }
+
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: projectId || undefined,
+    });
+
+    console.log("Push token obtained:", tokenData.data.substring(0, 30) + "...");
+    return tokenData.data;
+  } catch (error) {
+    console.error("Failed to get push token:", error);
+    return null;
+  }
 }
 
 export function useNotifications(userId?: string) {
@@ -60,7 +77,8 @@ export function useNotifications(userId?: string) {
       if (token) {
         tokenRef.current = token;
         try {
-          await apiRequest("POST", "/api/push-token", { userId, token });
+          const response = await apiRequest("POST", "/api/push-token", { userId, token });
+          console.log("Push token registered successfully");
         } catch (error) {
           console.log("Could not register push token:", error);
         }
