@@ -6,6 +6,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Avatar } from "@/components/Avatar";
@@ -15,6 +16,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { showImagePickerOptions, launchCamera, launchImageLibrary } from "@/lib/imagePicker";
 
 export default function ProfileScreen() {
   const { theme } = useTheme();
@@ -22,8 +24,29 @@ export default function ProfileScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { user, refreshUser } = useAuth();
+  const { user, updateProfile, refreshUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+
+  const handleAvatarPress = () => {
+    showImagePickerOptions(
+      async () => {
+        const result = await launchCamera();
+        if (result) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          await updateProfile({ avatarUrl: result.base64 || result.uri });
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      },
+      async () => {
+        const result = await launchImageLibrary();
+        if (result) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          await updateProfile({ avatarUrl: result.base64 || result.uri });
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      }
+    );
+  };
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -62,7 +85,7 @@ export default function ProfileScreen() {
         }
       >
         <View style={styles.header}>
-          <Avatar uri={user.avatarUrl} size="xlarge" showEditBadge onPress={() => {}} />
+          <Avatar uri={user.avatarUrl} size="xlarge" showEditBadge onPress={handleAvatarPress} />
           <ThemedText type="h3" style={styles.familyName}>
             {user.familyName}
           </ThemedText>
