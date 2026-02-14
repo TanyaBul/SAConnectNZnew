@@ -14,7 +14,7 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-import { addConnection, getConnections, blockUser, reportUser, getOrCreateThread, REPORT_REASONS } from "@/lib/storage";
+import { addConnection, getConnections, updateConnectionStatus, blockUser, reportUser, getOrCreateThread, REPORT_REASONS } from "@/lib/storage";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "@/context/AuthContext";
 
@@ -28,6 +28,8 @@ export default function FamilyDetailScreen() {
   const { user } = useAuth();
 
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
+  const [connectionId, setConnectionId] = useState<string | null>(null);
+  const [isReceiver, setIsReceiver] = useState(false);
   const [loading, setLoading] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [reportModalVisible, setReportModalVisible] = useState(false);
@@ -47,6 +49,8 @@ export default function FamilyDetailScreen() {
     );
     if (connection) {
       setConnectionStatus(connection.status);
+      setConnectionId(connection.id);
+      setIsReceiver(connection.targetUserId === user.id);
     }
   };
 
@@ -57,9 +61,41 @@ export default function FamilyDetailScreen() {
     try {
       await addConnection(user.id, family.id);
       setConnectionStatus("pending");
+      setIsReceiver(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error("Error connecting:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAccept = async () => {
+    if (!connectionId) return;
+    setLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      await updateConnectionStatus(connectionId, "connected");
+      setConnectionStatus("connected");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      console.error("Error accepting connection:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDecline = async () => {
+    if (!connectionId) return;
+    setLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await updateConnectionStatus(connectionId, "rejected");
+      setConnectionStatus(null);
+      setConnectionId(null);
+      setIsReceiver(false);
+    } catch (error) {
+      console.error("Error declining connection:", error);
     } finally {
       setLoading(false);
     }
@@ -213,6 +249,31 @@ export default function FamilyDetailScreen() {
             <Button variant="secondary" style={styles.messageButton} onPress={handleMessage}>
               Send Message
             </Button>
+          </View>
+        ) : connectionStatus === "pending" && isReceiver ? (
+          <View style={[styles.connectedSection, { backgroundColor: theme.primary + "10" }]}>
+            <Feather name="user-plus" size={24} color={theme.primary} />
+            <ThemedText type="body" style={[styles.connectedText, { color: theme.primary }]}>
+              This family wants to connect with you!
+            </ThemedText>
+            <View style={styles.acceptDeclineRow}>
+              <Button
+                variant="outline"
+                onPress={handleDecline}
+                loading={loading}
+                style={styles.declineButton}
+              >
+                Decline
+              </Button>
+              <Button
+                onPress={handleAccept}
+                loading={loading}
+                size="large"
+                style={styles.acceptButton}
+              >
+                Accept
+              </Button>
+            </View>
           </View>
         ) : connectionStatus === "pending" ? (
           <View style={[styles.connectedSection, { backgroundColor: theme.accent + "15" }]}>
@@ -438,6 +499,18 @@ const styles = StyleSheet.create({
   },
   connectButton: {
     marginTop: Spacing.lg,
+  },
+  acceptDeclineRow: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
+    width: "100%",
+  },
+  acceptButton: {
+    flex: 1,
+  },
+  declineButton: {
+    flex: 1,
   },
   moreButton: {
     flexDirection: "row",
