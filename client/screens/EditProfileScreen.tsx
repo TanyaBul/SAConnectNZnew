@@ -149,7 +149,7 @@ export default function EditProfileScreen() {
           onChangeText={setBio}
           multiline
           numberOfLines={4}
-          maxLength={300}
+          maxLength={500}
         />
         <ThemedText
           type="small"

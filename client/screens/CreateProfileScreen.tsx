@@ -145,7 +145,7 @@ export default function CreateProfileScreen() {
           onChangeText={setBio}
           multiline
           numberOfLines={4}
-          maxLength={300}
+          maxLength={500}
         />
 
         <ThemedText type="heading" style={styles.sectionTitle}>
