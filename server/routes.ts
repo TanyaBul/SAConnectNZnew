@@ -901,8 +901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Maximum 5 photos allowed" });
       }
 
-      const photoUrl = saveBase64Image(imageData, "family-photos");
-      const photo = await storage.addFamilyPhoto(userId, photoUrl, count);
+      const photo = await storage.addFamilyPhoto(userId, imageData, count);
       res.json(photo);
     } catch (error) {
       console.error("Upload family photo error:", error);
@@ -915,17 +914,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const photo = await storage.deleteFamilyPhoto(req.params.photoId as string);
       if (!photo) {
         return res.status(404).json({ error: "Photo not found" });
-      }
-
-      try {
-        if (photo.photoUrl.startsWith("/uploads/")) {
-          const filePath = path.resolve(process.cwd(), photo.photoUrl.substring(1));
-          if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-          }
-        }
-      } catch (deleteError) {
-        console.error("Failed to delete photo file:", deleteError);
       }
 
       res.json({ success: true });
