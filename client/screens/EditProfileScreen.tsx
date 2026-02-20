@@ -38,6 +38,8 @@ export default function EditProfileScreen() {
   const [customInterest, setCustomInterest] = useState("");
   const [suburb, setSuburb] = useState(user?.location?.suburb || "");
   const [city, setCity] = useState(user?.location?.city || "");
+  const [detectedLat, setDetectedLat] = useState<number | null>(null);
+  const [detectedLon, setDetectedLon] = useState<number | null>(null);
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [locationUpdated, setLocationUpdated] = useState(false);
 
@@ -69,6 +71,8 @@ export default function EditProfileScreen() {
         const detectedCity = address?.city || "";
         setSuburb(detectedSuburb);
         setCity(detectedCity);
+        setDetectedLat(location.coords.latitude);
+        setDetectedLon(location.coords.longitude);
         setLocationUpdated(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else if (!canAskAgain && Platform.OS !== "web") {
@@ -143,11 +147,30 @@ export default function EditProfileScreen() {
       const suburbChanged = suburb !== (user?.location?.suburb || "");
       const cityChanged = city !== (user?.location?.city || "");
       if (suburbChanged || cityChanged || locationUpdated) {
+        let lat = user?.location?.lat || 0;
+        let lon = user?.location?.lon || 0;
+
+        if (locationUpdated && detectedLat !== null && detectedLon !== null) {
+          lat = detectedLat;
+          lon = detectedLon;
+        } else if (suburbChanged || cityChanged) {
+          const searchAddress = [suburb.trim(), city.trim(), "New Zealand"].filter(Boolean).join(", ");
+          try {
+            const geocoded = await Location.geocodeAsync(searchAddress);
+            if (geocoded.length > 0) {
+              lat = geocoded[0].latitude;
+              lon = geocoded[0].longitude;
+            }
+          } catch (error) {
+            console.error("Geocoding error:", error);
+          }
+        }
+
         updates.location = {
           suburb: suburb.trim(),
           city: city.trim(),
-          lat: user?.location?.lat || 0,
-          lon: user?.location?.lon || 0,
+          lat,
+          lon,
           radiusPreference: user?.location?.radiusPreference || 25,
         };
       }
