@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Pressable, TextInput } from "react-native";
+import { View, StyleSheet, Pressable, TextInput, ActivityIndicator, Platform, Linking } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as Location from "expo-location";
 
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
@@ -13,7 +14,7 @@ import { Input } from "@/components/Input";
 import { Avatar } from "@/components/Avatar";
 import { InterestTag } from "@/components/InterestTag";
 import { useTheme } from "@/hooks/useTheme";
-import { BorderRadius, Spacing } from "@/constants/theme";
+import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
 import { useAuth, FamilyMember } from "@/context/AuthContext";
 import { INTERESTS_OPTIONS } from "@/lib/storage";
 import { showImagePickerOptions, launchCamera, launchImageLibrary } from "@/lib/imagePicker";
@@ -35,6 +36,10 @@ export default function EditProfileScreen() {
   );
   const [loading, setLoading] = useState(false);
   const [customInterest, setCustomInterest] = useState("");
+  const [suburb, setSuburb] = useState(user?.location?.suburb || "");
+  const [city, setCity] = useState(user?.location?.city || "");
+  const [detectingLocation, setDetectingLocation] = useState(false);
+  const [locationUpdated, setLocationUpdated] = useState(false);
 
   const addCustomInterest = () => {
     const trimmed = customInterest.trim();
@@ -46,6 +51,36 @@ export default function EditProfileScreen() {
     Haptics.selectionAsync();
     setSelectedInterests([...selectedInterests, trimmed]);
     setCustomInterest("");
+  };
+
+  const handleDetectLocation = async () => {
+    setDetectingLocation(true);
+    try {
+      const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
+      if (status === "granted") {
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        const [address] = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        const detectedSuburb = address?.subregion || address?.district || "";
+        const detectedCity = address?.city || "";
+        setSuburb(detectedSuburb);
+        setCity(detectedCity);
+        setLocationUpdated(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else if (!canAskAgain && Platform.OS !== "web") {
+        try {
+          await Linking.openSettings();
+        } catch {}
+      }
+    } catch (error) {
+      console.error("Location detection error:", error);
+    } finally {
+      setDetectingLocation(false);
+    }
   };
 
   const handleAvatarPress = () => {
@@ -97,13 +132,27 @@ export default function EditProfileScreen() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      await updateProfile({
+      const updates: any = {
         familyName,
         bio,
         avatarUrl: avatarBase64 || (avatarUri && !avatarUri.startsWith("file://") ? avatarUri : undefined),
         familyMembers: familyMembers.filter((m) => m.name.trim()),
         interests: selectedInterests,
-      });
+      };
+
+      const suburbChanged = suburb !== (user?.location?.suburb || "");
+      const cityChanged = city !== (user?.location?.city || "");
+      if (suburbChanged || cityChanged || locationUpdated) {
+        updates.location = {
+          suburb: suburb.trim(),
+          city: city.trim(),
+          lat: user?.location?.lat || 0,
+          lon: user?.location?.lon || 0,
+          radiusPreference: user?.location?.radiusPreference || 25,
+        };
+      }
+
+      await updateProfile(updates);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (error) {
@@ -157,6 +206,51 @@ export default function EditProfileScreen() {
         >
           Please avoid sharing personal details and sensitive information such as bank details.
         </ThemedText>
+
+        <ThemedText type="heading" style={styles.sectionTitle}>
+          Location
+        </ThemedText>
+        <ThemedText
+          type="caption"
+          style={[styles.sectionHint, { color: theme.textSecondary }]}
+        >
+          Set where you live so nearby families can find you
+        </ThemedText>
+
+        <View style={[styles.locationSection, { backgroundColor: theme.backgroundDefault, ...Shadows.card }]}>
+          <View style={styles.locationInputs}>
+            <Input
+              label="Suburb / Area"
+              placeholder="e.g., Howick"
+              value={suburb}
+              onChangeText={(text) => { setSuburb(text); setLocationUpdated(true); }}
+              testID="input-suburb"
+            />
+            <Input
+              label="City"
+              placeholder="e.g., Auckland"
+              value={city}
+              onChangeText={(text) => { setCity(text); setLocationUpdated(true); }}
+              testID="input-city"
+            />
+          </View>
+
+          <Pressable
+            style={[styles.detectButton, { backgroundColor: theme.primary + "10", borderColor: theme.primary }]}
+            onPress={handleDetectLocation}
+            disabled={detectingLocation}
+            testID="button-detect-location"
+          >
+            {detectingLocation ? (
+              <ActivityIndicator size="small" color={theme.primary} />
+            ) : (
+              <Feather name="crosshair" size={18} color={theme.primary} />
+            )}
+            <ThemedText type="body" style={{ color: theme.primary, marginLeft: Spacing.sm, fontWeight: "500" }}>
+              {detectingLocation ? "Detecting..." : "Use my current location"}
+            </ThemedText>
+          </Pressable>
+        </View>
 
         <ThemedText type="heading" style={styles.sectionTitle}>
           Family Members
@@ -331,6 +425,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: Spacing["3xl"],
     marginLeft: Spacing.sm,
+  },
+  locationSection: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing["3xl"],
+  },
+  locationInputs: {
+    gap: Spacing.xs,
+  },
+  detectButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    marginTop: Spacing.sm,
   },
   addMemberButton: {
     flexDirection: "row",

@@ -96,6 +96,11 @@ Full PostgreSQL database integration with Drizzle ORM:
 All data persists server-side - no more demo/sample data.
 
 ## Recent Changes
+- Editable location on Edit Profile screen
+  - Suburb/Area and City text inputs for manual location entry
+  - "Use my current location" GPS auto-detect button
+  - Location saved with profile and displayed on Profile screen
+  - Supports families who move or don't live near where they downloaded the app
 - Disconnect from families
   - Families can disconnect from each other via FamilyDetail screen
   - "Disconnect from this family" option in More Options menu (only shown when connected)
