@@ -18,6 +18,7 @@ export const users = pgTable("users", {
   lon: real("lon"),
   radiusPreference: integer("radius_preference").default(25),
   interests: text("interests").array(),
+  profileHidden: boolean("profile_hidden").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
