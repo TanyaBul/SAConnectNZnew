@@ -354,6 +354,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/connections/:id", async (req: Request, res: Response) => {
+    try {
+      const deleted = await storage.deleteConnection(req.params.id as string);
+      if (!deleted) {
+        return res.status(404).json({ error: "Connection not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete connection error:", error);
+      res.status(500).json({ error: "Failed to delete connection" });
+    }
+  });
+
   app.get("/api/threads/:userId", async (req: Request, res: Response) => {
     try {
       const threads = await storage.getThreads(req.params.userId as string);

@@ -194,6 +194,11 @@ export class DatabaseStorage implements IStorage {
     return connection;
   }
 
+  async deleteConnection(id: string): Promise<boolean> {
+    const result = await db.delete(schema.connections).where(eq(schema.connections.id, id)).returning();
+    return result.length > 0;
+  }
+
   async getConnectionBetween(userId: string, targetUserId: string): Promise<schema.Connection | undefined> {
     const [connection] = await db.select().from(schema.connections).where(
       or(

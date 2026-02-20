@@ -96,6 +96,12 @@ Full PostgreSQL database integration with Drizzle ORM:
 All data persists server-side - no more demo/sample data.
 
 ## Recent Changes
+- Disconnect from families
+  - Families can disconnect from each other via FamilyDetail screen
+  - "Disconnect from this family" option in More Options menu (only shown when connected)
+  - Centered confirmation modal with "Keep Connection" / "Disconnect" buttons
+  - DELETE /api/connections/:id endpoint removes the connection
+  - After disconnecting, "Send Connection Request" button reappears
 - Hide Profile feature
   - Toggle on Profile screen to hide/show profile from Discover feed
   - Prominent amber warning banner when profile is hidden

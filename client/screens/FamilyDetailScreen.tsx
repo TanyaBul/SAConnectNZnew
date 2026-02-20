@@ -15,7 +15,7 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows, Typography } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-import { addConnection, getConnections, updateConnectionStatus, blockUser, reportUser, getOrCreateThread, REPORT_REASONS, getFamilyPhotos, FamilyPhoto } from "@/lib/storage";
+import { addConnection, getConnections, updateConnectionStatus, deleteConnection, blockUser, reportUser, getOrCreateThread, REPORT_REASONS, getFamilyPhotos, FamilyPhoto } from "@/lib/storage";
 import { getApiUrl } from "@/lib/query-client";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuth } from "@/context/AuthContext";
@@ -44,6 +44,7 @@ export default function FamilyDetailScreen() {
   const [reportDetails, setReportDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [familyPhotos, setFamilyPhotos] = useState<FamilyPhoto[]>([]);
+  const [disconnectModalVisible, setDisconnectModalVisible] = useState(false);
 
   useEffect(() => {
     loadFullProfile();
@@ -174,6 +175,26 @@ export default function FamilyDetailScreen() {
     if (success) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!connectionId) return;
+    setDisconnectModalVisible(false);
+    setLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const success = await deleteConnection(connectionId);
+      if (success) {
+        setConnectionStatus(null);
+        setConnectionId(null);
+        setIsReceiver(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (error) {
+      console.error("Error disconnecting:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -401,6 +422,15 @@ export default function FamilyDetailScreen() {
               Options
             </ThemedText>
             
+            {connectionStatus === "connected" ? (
+              <Pressable style={styles.menuItem} onPress={() => { setMenuVisible(false); setDisconnectModalVisible(true); }}>
+                <Feather name="user-minus" size={20} color={theme.error} />
+                <ThemedText type="body" style={[styles.menuItemText, { color: theme.error }]}>
+                  Disconnect from this family
+                </ThemedText>
+              </Pressable>
+            ) : null}
+            
             <Pressable style={styles.menuItem} onPress={handleReport}>
               <Feather name="flag" size={20} color="#F59E0B" />
               <ThemedText type="body" style={[styles.menuItemText, { color: "#F59E0B" }]}>
@@ -506,6 +536,46 @@ export default function FamilyDetailScreen() {
             >
               Submit Report
             </Button>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={disconnectModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDisconnectModalVisible(false)}
+      >
+        <Pressable style={[styles.modalOverlay, { justifyContent: "center" }]} onPress={() => setDisconnectModalVisible(false)}>
+          <Pressable
+            style={[styles.disconnectModal, { backgroundColor: theme.backgroundDefault }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.disconnectIcon}>
+              <Feather name="user-minus" size={32} color={theme.error} />
+            </View>
+            <ThemedText type="h3" style={styles.disconnectTitle}>
+              Disconnect from {family.familyName}?
+            </ThemedText>
+            <ThemedText type="body" style={[styles.disconnectDesc, { color: theme.textSecondary }]}>
+              You will no longer be connected. You can send a new connection request later if you change your mind.
+            </ThemedText>
+            <View style={styles.disconnectActions}>
+              <Button
+                variant="outline"
+                onPress={() => setDisconnectModalVisible(false)}
+                style={styles.disconnectCancelBtn}
+              >
+                Keep Connection
+              </Button>
+              <Button
+                onPress={handleDisconnect}
+                loading={loading}
+                style={[styles.disconnectConfirmBtn, { backgroundColor: theme.error }]}
+              >
+                Disconnect
+              </Button>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -815,5 +885,40 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.15)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  disconnectModal: {
+    marginHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xl,
+    alignItems: "center",
+  },
+  disconnectIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(239,68,68,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.lg,
+  },
+  disconnectTitle: {
+    textAlign: "center",
+    marginBottom: Spacing.sm,
+  },
+  disconnectDesc: {
+    textAlign: "center",
+    marginBottom: Spacing.xl,
+    lineHeight: 22,
+  },
+  disconnectActions: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    width: "100%",
+  },
+  disconnectCancelBtn: {
+    flex: 1,
+  },
+  disconnectConfirmBtn: {
+    flex: 1,
   },
 });

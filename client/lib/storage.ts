@@ -160,6 +160,16 @@ export async function updateConnectionStatus(connectionId: string, status: strin
   }
 }
 
+export async function deleteConnection(connectionId: string): Promise<boolean> {
+  try {
+    const response = await apiRequest("DELETE", `/api/connections/${connectionId}`);
+    return response.ok;
+  } catch (error) {
+    console.error("Error deleting connection:", error);
+    return false;
+  }
+}
+
 export async function getThreads(userId: string): Promise<MessageThread[]> {
   try {
     const response = await fetch(new URL(`/api/threads/${userId}`, getApiUrl()).toString());
