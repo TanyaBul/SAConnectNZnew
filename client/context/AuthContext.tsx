@@ -25,6 +25,7 @@ export interface UserProfile {
   location: UserLocation | null;
   familyMembers: FamilyMember[];
   interests: string[];
+  profileHidden: boolean;
   createdAt: string;
 }
 
@@ -65,6 +66,7 @@ function transformDbUserToProfile(dbUser: any): UserProfile {
     } : null,
     familyMembers: dbUser.familyMembers || [],
     interests: dbUser.interests || [],
+    profileHidden: dbUser.profileHidden || false,
     createdAt: dbUser.createdAt,
   };
 }
@@ -162,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (updates.avatarUrl !== undefined) dbUpdates.avatarUrl = updates.avatarUrl;
       if (updates.interests !== undefined) dbUpdates.interests = updates.interests;
       if (updates.familyMembers !== undefined) dbUpdates.familyMembers = updates.familyMembers;
+      if (updates.profileHidden !== undefined) dbUpdates.profileHidden = updates.profileHidden;
       
       if (updates.location) {
         dbUpdates.suburb = updates.location.suburb;

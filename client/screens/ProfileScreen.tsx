@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Pressable, RefreshControl, Modal, Dimensions, ActivityIndicator, Alert, Platform } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, RefreshControl, Modal, Dimensions, ActivityIndicator, Alert, Platform, Switch } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -36,6 +36,7 @@ export default function ProfileScreen() {
   const [uploading, setUploading] = useState(false);
   const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [togglingHidden, setTogglingHidden] = useState(false);
 
   const loadPhotos = useCallback(async () => {
     if (!user?.id) return;
@@ -158,6 +159,17 @@ export default function ProfileScreen() {
     }
   }, [refreshUser, loadPhotos]);
 
+  const handleToggleHidden = async (newValue: boolean) => {
+    setTogglingHidden(true);
+    try {
+      await updateProfile({ profileHidden: newValue });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch (error) {
+      console.error("Failed to toggle profile visibility:", error);
+    }
+    setTogglingHidden(false);
+  };
+
   if (!user) {
     return (
       <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -211,6 +223,52 @@ export default function ProfileScreen() {
               </ThemedText>
             </Pressable>
           )}
+        </View>
+
+        {user.profileHidden ? (
+          <View style={[styles.hiddenBanner, { backgroundColor: "#FEF3C7", borderColor: "#F59E0B" }]}>
+            <View style={styles.hiddenBannerTop}>
+              <Feather name="eye-off" size={20} color="#92400E" />
+              <ThemedText type="body" style={[styles.hiddenBannerTitle, { color: "#92400E" }]}>
+                Your profile is hidden
+              </ThemedText>
+            </View>
+            <ThemedText type="small" style={{ color: "#92400E", marginBottom: Spacing.md }}>
+              Other families cannot see you in Discover. Your existing connections and messages are still active.
+            </ThemedText>
+            <Pressable
+              style={[styles.hiddenBannerButton, { backgroundColor: "#F59E0B" }]}
+              onPress={() => handleToggleHidden(false)}
+              disabled={togglingHidden}
+            >
+              <Feather name="eye" size={16} color="#FFFFFF" />
+              <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: Spacing.sm }}>
+                {togglingHidden ? "Updating..." : "Make Profile Visible"}
+              </ThemedText>
+            </Pressable>
+          </View>
+        ) : null}
+
+        <View style={[styles.visibilityRow, { backgroundColor: theme.backgroundDefault }]}>
+          <View style={styles.visibilityInfo}>
+            <Feather name={user.profileHidden ? "eye-off" : "eye"} size={20} color={user.profileHidden ? theme.textSecondary : theme.primary} />
+            <View style={{ marginLeft: Spacing.md, flex: 1 }}>
+              <ThemedText type="body" style={{ fontWeight: "500" }}>
+                {user.profileHidden ? "Profile Hidden" : "Profile Visible"}
+              </ThemedText>
+              <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                {user.profileHidden ? "Not shown in Discover" : "Visible to other families"}
+              </ThemedText>
+            </View>
+          </View>
+          <Switch
+            value={user.profileHidden || false}
+            onValueChange={handleToggleHidden}
+            disabled={togglingHidden}
+            trackColor={{ false: theme.border, true: "#F59E0B" }}
+            thumbColor="#FFFFFF"
+            testID="toggle-hide-profile"
+          />
         </View>
 
         {user.bio ? (
@@ -510,6 +568,43 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.sm,
+  },
+  hiddenBanner: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    marginBottom: Spacing.lg,
+  },
+  hiddenBannerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Spacing.sm,
+  },
+  hiddenBannerTitle: {
+    fontWeight: "700",
+    marginLeft: Spacing.sm,
+  },
+  hiddenBannerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.full,
+  },
+  visibilityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.lg,
+    ...Shadows.card,
+  },
+  visibilityInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
   },
   editButton: {
     marginTop: Spacing.lg,

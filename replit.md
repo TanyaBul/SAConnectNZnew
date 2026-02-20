@@ -96,6 +96,12 @@ Full PostgreSQL database integration with Drizzle ORM:
 All data persists server-side - no more demo/sample data.
 
 ## Recent Changes
+- Hide Profile feature
+  - Toggle on Profile screen to hide/show profile from Discover feed
+  - Prominent amber warning banner when profile is hidden
+  - Existing connections and messages remain active when hidden
+  - Database column: profile_hidden on users table
+  - Discover query filters out hidden profiles
 - Family Photo Gallery
   - Upload up to 5 family photos per profile
   - Photos stored in /uploads/family-photos/ (filesystem, same as business logos)
