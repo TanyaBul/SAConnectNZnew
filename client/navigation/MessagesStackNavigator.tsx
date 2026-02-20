@@ -11,7 +11,7 @@ export type MessagesStackParamList = {
 const Stack = createNativeStackNavigator<MessagesStackParamList>();
 
 export default function MessagesStackNavigator() {
-  const screenOptions = useScreenOptions();
+  const screenOptions = useScreenOptions({ transparent: false });
 
   return (
     <Stack.Navigator screenOptions={screenOptions}>

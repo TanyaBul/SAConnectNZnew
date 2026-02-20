@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -18,7 +17,6 @@ export default function MessagesScreen() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -100,7 +98,7 @@ export default function MessagesScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: headerHeight + Spacing.lg,
+            paddingTop: Spacing.lg,
             paddingBottom: tabBarHeight + Spacing.lg,
           },
           threads.length === 0 && styles.emptyList,
